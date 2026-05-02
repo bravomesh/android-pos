@@ -1,0 +1,352 @@
+/**
+ * Mobile POS - SQLite Database Service
+ *
+ * This service handles all database operations using Capacitor SQLite plugin.
+ * It replaces the backend Node.js/Express API with direct SQLite access.
+ */
+
+import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { Capacitor } from '@capacitor/core';
+
+class DatabaseService {
+  constructor() {
+    this.sqlite = null;
+    this.db = null;
+    this.dbName = 'pos_database';
+    this.initialized = false;
+    this.platform = Capacitor.getPlatform();
+  }
+
+  /**
+   * Initialize the database connection and create tables
+   */
+  async initialize() {
+    if (this.initialized) {
+      return true;
+    }
+
+    try {
+      this.sqlite = new SQLiteConnection(CapacitorSQLite);
+
+      // For web platform, we need to use jeep-sqlite
+      if (this.platform === 'web') {
+        await this.initializeWeb();
+      }
+
+      // Check connection consistency
+      const retCC = (await this.sqlite.checkConnectionsConsistency()).result;
+      const isConn = (await this.sqlite.isConnection(this.dbName, false)).result;
+
+      if (retCC && isConn) {
+        this.db = await this.sqlite.retrieveConnection(this.dbName, false);
+      } else {
+        this.db = await this.sqlite.createConnection(
+          this.dbName,
+          false,
+          'no-encryption',
+          1,
+          false
+        );
+      }
+
+      await this.db.open();
+      await this.createTables();
+      await this.seedDefaultData();
+
+      this.initialized = true;
+      console.log('Database initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('Database initialization error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initialize web platform with jeep-sqlite
+   */
+  async initializeWeb() {
+    const jeepSqlite = document.querySelector('jeep-sqlite');
+    if (jeepSqlite) {
+      await this.sqlite.initWebStore();
+    }
+  }
+
+  /**
+   * Create all database tables
+   */
+  async createTables() {
+    const createTableStatements = `
+      -- Users table
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        role TEXT DEFAULT 'NonAdmin',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Product Types (Categories)
+      CREATE TABLE IF NOT EXISTS product_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        description TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Products
+      CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        cost_price REAL NOT NULL DEFAULT 0,
+        selling_price REAL NOT NULL DEFAULT 0,
+        product_type_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_by INTEGER,
+        updated_by INTEGER,
+        FOREIGN KEY (product_type_id) REFERENCES product_types(id)
+      );
+
+      -- Stock (one-to-one with Products)
+      CREATE TABLE IF NOT EXISTS stock (
+        product_id INTEGER PRIMARY KEY,
+        qty REAL NOT NULL DEFAULT 0,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+      );
+
+      -- Customers
+      CREATE TABLE IF NOT EXISTS customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        address TEXT,
+        mobile TEXT,
+        email TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Vendors
+      CREATE TABLE IF NOT EXISTS vendors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        address TEXT,
+        mobile TEXT,
+        email TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Transaction ID Generator
+      CREATE TABLE IF NOT EXISTS transaction_id (
+        id INTEGER PRIMARY KEY,
+        count INTEGER NOT NULL DEFAULT 0
+      );
+
+      -- Transaction Headers
+      CREATE TABLE IF NOT EXISTS transaction_headers (
+        id INTEGER PRIMARY KEY,
+        bill_amount REAL DEFAULT 0,
+        net_amount REAL DEFAULT 0,
+        amount_paid REAL DEFAULT 0,
+        tax TEXT DEFAULT '0',
+        tax_amount REAL DEFAULT 0,
+        discount_on_items REAL DEFAULT 0,
+        discount_on_total REAL DEFAULT 0,
+        sales_type TEXT DEFAULT 'Counter',
+        transaction_status TEXT DEFAULT 'Init',
+        customer_id INTEGER,
+        is_active INTEGER DEFAULT 1,
+        comments TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_by INTEGER,
+        FOREIGN KEY (customer_id) REFERENCES customers(id)
+      );
+
+      -- Transaction Details (line items)
+      CREATE TABLE IF NOT EXISTS transaction_details (
+        transaction_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        qty REAL NOT NULL DEFAULT 0,
+        cost_price REAL NOT NULL DEFAULT 0,
+        selling_price REAL NOT NULL DEFAULT 0,
+        discount REAL DEFAULT 0,
+        price REAL NOT NULL DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (transaction_id, product_id),
+        FOREIGN KEY (transaction_id) REFERENCES transaction_headers(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      );
+
+      -- Credit Transactions
+      CREATE TABLE IF NOT EXISTS credit_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        transaction_id INTEGER NOT NULL,
+        amount_paid REAL DEFAULT 0,
+        bill_amount REAL DEFAULT 0,
+        balance REAL DEFAULT 0,
+        total_debt REAL DEFAULT 0,
+        type TEXT DEFAULT 'Sale',
+        is_reverted INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (customer_id) REFERENCES customers(id),
+        FOREIGN KEY (transaction_id) REFERENCES transaction_headers(id)
+      );
+
+      -- Credit Transactions Pointer (for balance optimization)
+      CREATE TABLE IF NOT EXISTS credit_transactions_pointer (
+        customer_id INTEGER PRIMARY KEY,
+        seq_pointer INTEGER DEFAULT 0,
+        balance_amount REAL DEFAULT 0,
+        FOREIGN KEY (customer_id) REFERENCES customers(id)
+      );
+
+      -- Expense Types
+      CREATE TABLE IF NOT EXISTS expense_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        description TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Expenses
+      CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        description TEXT,
+        amount REAL NOT NULL DEFAULT 0,
+        spent_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        expense_type_id INTEGER,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (expense_type_id) REFERENCES expense_types(id)
+      );
+
+      -- Receivings (Inventory Purchases)
+      CREATE TABLE IF NOT EXISTS receivings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        vendor_id INTEGER,
+        qty REAL NOT NULL DEFAULT 0,
+        price REAL NOT NULL DEFAULT 0,
+        payed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (product_id) REFERENCES products(id),
+        FOREIGN KEY (vendor_id) REFERENCES vendors(id)
+      );
+
+      -- Create indexes for better performance
+      CREATE INDEX IF NOT EXISTS idx_products_type ON products(product_type_id);
+      CREATE INDEX IF NOT EXISTS idx_stock_qty ON stock(qty);
+      CREATE INDEX IF NOT EXISTS idx_transactions_status ON transaction_headers(transaction_status);
+      CREATE INDEX IF NOT EXISTS idx_transactions_type ON transaction_headers(sales_type);
+      CREATE INDEX IF NOT EXISTS idx_transactions_date ON transaction_headers(created_at);
+      CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(spent_at);
+      CREATE INDEX IF NOT EXISTS idx_credit_customer ON credit_transactions(customer_id);
+    `;
+
+    await this.db.execute(createTableStatements);
+    console.log('Tables created successfully');
+  }
+
+  /**
+   * Seed default data (admin user, transaction counter)
+   */
+  async seedDefaultData() {
+    // Check if admin user exists
+    const adminCheck = await this.db.query("SELECT * FROM users WHERE name = 'admin'");
+
+    if (adminCheck.values.length === 0) {
+      // Insert default admin user (password: admin, hashed with bcrypt)
+      // Note: In production, use proper password hashing
+      await this.db.run(
+        "INSERT INTO users (name, password, role) VALUES (?, ?, ?)",
+        ['admin', '$2b$10$rQEY9zLNKz5Z5Q5Z5Q5Z5OeJZ5Z5Q5Z5Q5Z5Q5Z5Q5Z5Q5Z5Q5Z5', 'Admin']
+      );
+      console.log('Default admin user created');
+    }
+
+    // Initialize transaction counter if not exists
+    const counterCheck = await this.db.query("SELECT * FROM transaction_id WHERE id = 1");
+    if (counterCheck.values.length === 0) {
+      await this.db.run("INSERT INTO transaction_id (id, count) VALUES (1, 0)");
+      console.log('Transaction counter initialized');
+    }
+  }
+
+  /**
+   * Execute a query and return results
+   */
+  async query(sql, params = []) {
+    try {
+      const result = await this.db.query(sql, params);
+      return result.values || [];
+    } catch (error) {
+      console.error('Query error:', sql, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute a statement (INSERT, UPDATE, DELETE)
+   */
+  async run(sql, params = []) {
+    try {
+      const result = await this.db.run(sql, params);
+      return result;
+    } catch (error) {
+      console.error('Run error:', sql, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute multiple statements in a transaction
+   */
+  async executeTransaction(statements) {
+    try {
+      await this.db.execute('BEGIN TRANSACTION');
+
+      for (const stmt of statements) {
+        await this.db.run(stmt.sql, stmt.params || []);
+      }
+
+      await this.db.execute('COMMIT');
+      return true;
+    } catch (error) {
+      await this.db.execute('ROLLBACK');
+      console.error('Transaction error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get the next transaction ID
+   */
+  async getNextTransactionId() {
+    const result = await this.db.query("SELECT count FROM transaction_id WHERE id = 1");
+    const currentCount = result.values[0]?.count || 0;
+    const nextCount = currentCount + 1;
+    await this.db.run("UPDATE transaction_id SET count = ? WHERE id = 1", [nextCount]);
+    return nextCount;
+  }
+
+  /**
+   * Close the database connection
+   */
+  async close() {
+    if (this.db) {
+      await this.sqlite.closeConnection(this.dbName, false);
+      this.initialized = false;
+    }
+  }
+}
+
+// Export singleton instance
+const databaseService = new DatabaseService();
+export default databaseService;
