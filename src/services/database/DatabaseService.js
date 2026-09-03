@@ -14,6 +14,7 @@ class DatabaseService {
     this.db = null;
     this.dbName = 'pos_database';
     this.initialized = false;
+    this.transactionDepth = 0;
     this.platform = Capacitor.getPlatform();
   }
 
@@ -51,6 +52,7 @@ class DatabaseService {
 
       await this.db.open();
       await this.createTables();
+      await this.runMigrations();
       await this.seedDefaultData();
 
       this.initialized = true;
@@ -95,10 +97,22 @@ class DatabaseService {
       );
 
       -- Products
+      --
+      -- sku is the shop's own code (a clothing line uses one per
+      -- size/colour variant), barcode is what a scanner reads off the
+      -- packaging, unit labels what a quantity of 1 means (pcs, kg, L),
+      -- reorder_level is the per-product low-stock trigger, and
+      -- track_stock = 0 marks something sold without inventory, such as
+      -- alterations or a delivery fee.
       CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         description TEXT,
+        sku TEXT,
+        barcode TEXT,
+        unit TEXT NOT NULL DEFAULT 'pcs',
+        reorder_level REAL,
+        track_stock INTEGER NOT NULL DEFAULT 1,
         cost_price REAL NOT NULL DEFAULT 0,
         selling_price REAL NOT NULL DEFAULT 0,
         product_type_id INTEGER,
@@ -107,6 +121,22 @@ class DatabaseService {
         created_by INTEGER,
         updated_by INTEGER,
         FOREIGN KEY (product_type_id) REFERENCES product_types(id)
+      );
+
+      -- Stock adjustments: every change to stock that is not a sale or a
+      -- receiving. Breakages, spoilage, theft and physical stock-takes all
+      -- land here so the movement is auditable instead of a silent edit.
+      CREATE TABLE IF NOT EXISTS stock_adjustments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        qty_before REAL NOT NULL DEFAULT 0,
+        qty_change REAL NOT NULL DEFAULT 0,
+        qty_after REAL NOT NULL DEFAULT 0,
+        reason TEXT NOT NULL DEFAULT 'Adjustment',
+        notes TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        created_by INTEGER,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
       );
 
       -- Stock (one-to-one with Products)
@@ -258,10 +288,53 @@ class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_transactions_date ON transaction_headers(created_at);
       CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(spent_at);
       CREATE INDEX IF NOT EXISTS idx_credit_customer ON credit_transactions(customer_id);
+      CREATE INDEX IF NOT EXISTS idx_adjustments_product ON stock_adjustments(product_id);
+      CREATE INDEX IF NOT EXISTS idx_adjustments_date ON stock_adjustments(created_at);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_products_sku ON products(sku) WHERE sku IS NOT NULL AND sku <> '';
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode) WHERE barcode IS NOT NULL AND barcode <> '';
     `;
 
     await this.db.execute(createTableStatements);
     console.log('Tables created successfully');
+  }
+
+  /**
+   * Bring an existing database up to the current schema.
+   *
+   * `CREATE TABLE IF NOT EXISTS` is a no-op once a table exists, so columns
+   * added after a shop is already trading have to be applied by hand. Each
+   * step is guarded by what the database actually has, making the whole
+   * routine safe to re-run on every launch.
+   */
+  async runMigrations() {
+    const columnsOf = async (table) => {
+      const info = await this.db.query(`PRAGMA table_info(${table})`);
+      return (info.values || []).map((column) => column.name);
+    };
+
+    const addColumn = async (table, column, definition) => {
+      const existing = await columnsOf(table);
+      if (!existing.includes(column)) {
+        await this.db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+        console.log(`[migration] ${table}.${column} added`);
+      }
+    };
+
+    await addColumn('products', 'sku', 'TEXT');
+    await addColumn('products', 'barcode', 'TEXT');
+    await addColumn('products', 'unit', "TEXT NOT NULL DEFAULT 'pcs'");
+    await addColumn('products', 'reorder_level', 'REAL');
+    await addColumn('products', 'track_stock', 'INTEGER NOT NULL DEFAULT 1');
+
+    // Older installs stored no stock row for products created before the
+    // stock table was populated on insert; backfill so they are countable.
+    await this.db.execute(`
+      INSERT INTO stock (product_id, qty, updated_at)
+      SELECT p.id, 0, CURRENT_TIMESTAMP FROM products p
+      WHERE NOT EXISTS (SELECT 1 FROM stock s WHERE s.product_id = p.id)
+    `);
+
+    await this.persistWebStore();
   }
 
   /**
@@ -308,7 +381,11 @@ class DatabaseService {
   async run(sql, params = []) {
     try {
       const result = await this.db.run(sql, params);
-      await this.persistWebStore();
+      // Inside a transaction the store is flushed once at commit, so a
+      // rolled-back write is never snapshotted to IndexedDB.
+      if (this.transactionDepth === 0) {
+        await this.persistWebStore();
+      }
       return result;
     } catch (error) {
       console.error('Run error:', sql, error);
@@ -327,6 +404,44 @@ class DatabaseService {
       await this.sqlite.saveToStore(this.dbName);
     } catch (error) {
       console.error('saveToStore error:', error);
+    }
+  }
+
+  /**
+   * Run `work` inside a single SQLite transaction, so a failure part-way
+   * through leaves no half-applied writes (a sale that deducted stock but
+   * never recorded the sale, for example).
+   *
+   * Nested calls join the outermost transaction rather than starting a new
+   * one, because SQLite does not support nested BEGIN.
+   */
+  async withTransaction(work) {
+    if (this.transactionDepth > 0) {
+      this.transactionDepth += 1;
+      try {
+        return await work();
+      } finally {
+        this.transactionDepth -= 1;
+      }
+    }
+
+    await this.db.execute('BEGIN TRANSACTION');
+    this.transactionDepth = 1;
+
+    try {
+      const result = await work();
+      await this.db.execute('COMMIT');
+      this.transactionDepth = 0;
+      await this.persistWebStore();
+      return result;
+    } catch (error) {
+      this.transactionDepth = 0;
+      try {
+        await this.db.execute('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Rollback failed:', rollbackError);
+      }
+      throw error;
     }
   }
 

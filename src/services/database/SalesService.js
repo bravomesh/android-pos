@@ -166,7 +166,27 @@ class SalesService {
    * Complete a counter sale (cash payment)
    */
   async checkoutCounterSale(transactionId, saleData) {
+    return db.withTransaction(() => this.finalizeSale(transactionId, saleData, 'Counter'));
+  }
+
+  /**
+   * Shared body of both checkout paths.
+   *
+   * Everything here runs inside one SQLite transaction: if the header update
+   * fails after stock has been deducted, the whole sale rolls back rather
+   * than leaving the shop short of inventory it never sold.
+   */
+  async finalizeSale(transactionId, saleData, salesType) {
     const now = new Date().toISOString();
+
+    const header = await this.getTransaction(transactionId);
+    if (!header) {
+      throw new Error('Transaction not found');
+    }
+
+    if (header.transaction_status === 'Done') {
+      throw new Error('This sale has already been completed');
+    }
 
     // Get all items in the transaction
     const items = await db.query(
@@ -178,10 +198,8 @@ class SalesService {
       throw new Error('No items in cart');
     }
 
-    // Validate stock availability for all items
-    await this.validateStock(items);
-
-    // Deduct stock for all items
+    // Deduct stock for all items. decrementStock refuses to go below zero in
+    // the same statement it writes, so no separate validation pass is needed.
     await this.deductStock(items);
 
     // Calculate totals
@@ -203,23 +221,38 @@ class SalesService {
         tax_amount = ?,
         discount_on_items = ?,
         discount_on_total = ?,
-        sales_type = 'Counter',
+        sales_type = ?,
         transaction_status = 'Done',
+        customer_id = ?,
         is_active = 1,
         updated_at = ?
       WHERE id = ?`,
       [
         billAmount,
         netAmount,
-        saleData.amountPaid || netAmount,
+        // A counter sale always settles in full; anything the customer hands
+        // over beyond the bill is change, not takings.
+        salesType === 'Credit' ? Number(saleData.amountPaid) || 0 : netAmount,
         saleData.tax || '0',
         taxAmount,
         discountOnItems,
         discountOnTotal,
+        salesType,
+        saleData.customerId || null,
         now,
         transactionId
       ]
     );
+
+    if (salesType === 'Credit') {
+      await this.recordCreditTransaction(
+        saleData.customerId,
+        transactionId,
+        netAmount,
+        Number(saleData.amountPaid) || 0,
+        'Sale'
+      );
+    }
 
     return this.getTransactionWithDetails(transactionId);
   }
@@ -230,92 +263,27 @@ class SalesService {
    * Complete a credit sale (deferred payment)
    */
   async checkoutCreditSale(transactionId, saleData) {
-    const now = new Date().toISOString();
-
     if (!saleData.customerId) {
       throw new Error('Customer is required for credit sales');
     }
 
-    // Get all items in the transaction
-    const items = await db.query(
-      'SELECT * FROM transaction_details WHERE transaction_id = ?',
-      [transactionId]
-    );
-
-    if (items.length === 0) {
-      throw new Error('No items in cart');
-    }
-
-    // Validate stock availability for all items
-    await this.validateStock(items);
-
-    // Deduct stock for all items
-    await this.deductStock(items);
-
-    // Calculate totals
-    const billAmount = items.reduce((sum, item) => sum + item.price, 0);
-    const discountOnItems = items.reduce((sum, item) => sum + (item.discount * item.qty), 0);
-    const discountOnTotal = saleData.discountOnTotal || 0;
-    const taxPercent = parseFloat(saleData.tax || '0');
-    const subtotal = billAmount - discountOnTotal;
-    const taxAmount = subtotal * (taxPercent / 100);
-    const netAmount = subtotal + taxAmount;
-    const amountPaid = saleData.amountPaid || 0;
-    const balance = netAmount - amountPaid;
-
-    // Update transaction header
-    await db.run(
-      `UPDATE transaction_headers SET
-        bill_amount = ?,
-        net_amount = ?,
-        amount_paid = ?,
-        tax = ?,
-        tax_amount = ?,
-        discount_on_items = ?,
-        discount_on_total = ?,
-        sales_type = 'Credit',
-        transaction_status = 'Done',
-        customer_id = ?,
-        is_active = 1,
-        updated_at = ?
-      WHERE id = ?`,
-      [
-        billAmount,
-        netAmount,
-        amountPaid,
-        saleData.tax || '0',
-        taxAmount,
-        discountOnItems,
-        discountOnTotal,
-        saleData.customerId,
-        now,
-        transactionId
-      ]
-    );
-
-    // Record credit transaction
-    await this.recordCreditTransaction(
-      saleData.customerId,
-      transactionId,
-      netAmount,
-      amountPaid,
-      'Sale'
-    );
-
-    return this.getTransactionWithDetails(transactionId);
+    return db.withTransaction(() => this.finalizeSale(transactionId, saleData, 'Credit'));
   }
 
   // ==================== STOCK MANAGEMENT ====================
 
   /**
-   * Validate that all items have sufficient stock
+   * Check every line has stock without writing anything.
+   * Used by the register to warn before the cashier reaches checkout.
    */
   async validateStock(items) {
     for (const item of items) {
+      const product = await ProductsService.getProductById(item.product_id);
+      if (product && product.track_stock === 0) continue;
+
       const stock = await ProductsService.getStock(item.product_id);
 
       if (stock.qty < item.qty) {
-        const product = await ProductsService.getProductById(item.product_id);
         throw new Error(
           `Insufficient stock for "${product?.name || 'product'}". Available: ${stock.qty}, Requested: ${item.qty}`
         );
@@ -325,10 +293,13 @@ class SalesService {
   }
 
   /**
-   * Deduct stock for all items in a transaction
+   * Deduct stock for all items in a transaction.
+   * Non-stocked lines (services, fees) are billed but not counted.
    */
   async deductStock(items) {
     for (const item of items) {
+      const product = await ProductsService.getProductById(item.product_id);
+      if (product && product.track_stock === 0) continue;
       await ProductsService.decrementStock(item.product_id, item.qty);
     }
   }
@@ -338,6 +309,8 @@ class SalesService {
    */
   async restoreStock(items) {
     for (const item of items) {
+      const product = await ProductsService.getProductById(item.product_id);
+      if (product && product.track_stock === 0) continue;
       await ProductsService.incrementStock(item.product_id, item.qty);
     }
   }
@@ -364,7 +337,11 @@ class SalesService {
       seqPointer = pointer[0].seq_pointer || 0;
     }
 
-    // Calculate new balance
+    // Calculate new balance.
+    //
+    // 'SaleRevert' has to move the balance back by exactly what the sale put
+    // on it; leaving it unchanged (the old default branch) meant a reversed
+    // credit sale still showed as money owed forever.
     let newBalance;
     let totalDebt;
 
@@ -374,6 +351,9 @@ class SalesService {
     } else if (type === 'Payment') {
       newBalance = currentBalance - amountPaid;
       totalDebt = currentBalance;
+    } else if (type === 'SaleRevert') {
+      newBalance = currentBalance - (billAmount - amountPaid);
+      totalDebt = currentBalance - billAmount;
     } else {
       newBalance = currentBalance;
       totalDebt = currentBalance;
@@ -409,47 +389,59 @@ class SalesService {
    * Delete/revert a sale (restores stock)
    */
   async deleteSale(transactionId) {
-    const transaction = await this.getTransaction(transactionId);
+    return db.withTransaction(async () => {
+      const transaction = await this.getTransaction(transactionId);
 
-    if (!transaction) {
-      throw new Error('Transaction not found');
-    }
+      if (!transaction) {
+        throw new Error('Transaction not found');
+      }
 
-    // Get items to restore stock
-    const items = await db.query(
-      'SELECT * FROM transaction_details WHERE transaction_id = ?',
-      [transactionId]
-    );
+      // Reversing twice would put the goods back on the shelf twice and
+      // credit the customer twice, so a sale can only be reversed once.
+      if (transaction.is_active === 0) {
+        throw new Error('This sale has already been reversed');
+      }
 
-    // Restore stock for all items
-    await this.restoreStock(items);
+      const wasCompleted = transaction.transaction_status === 'Done';
 
-    const now = new Date().toISOString();
-
-    // Mark transaction as inactive
-    await db.run(
-      'UPDATE transaction_headers SET is_active = 0, updated_at = ? WHERE id = ?',
-      [now, transactionId]
-    );
-
-    // If credit sale, revert the credit transaction
-    if (transaction.sales_type === 'Credit' && transaction.customer_id) {
-      await this.recordCreditTransaction(
-        transaction.customer_id,
-        transactionId,
-        -transaction.net_amount,
-        -transaction.amount_paid,
-        'SaleRevertPayment'
-      );
-
-      // Mark credit transaction as reverted
-      await db.run(
-        'UPDATE credit_transactions SET is_reverted = 1 WHERE transaction_id = ?',
+      const items = await db.query(
+        'SELECT * FROM transaction_details WHERE transaction_id = ?',
         [transactionId]
       );
-    }
 
-    return { success: true };
+      // Stock only goes back if it was ever taken out. Abandoning a cart that
+      // never reached checkout must not invent inventory.
+      if (wasCompleted) {
+        await this.restoreStock(items);
+      }
+
+      const now = new Date().toISOString();
+
+      await db.run(
+        `UPDATE transaction_headers
+         SET is_active = 0, transaction_status = ?, updated_at = ?
+         WHERE id = ?`,
+        [wasCompleted ? 'Reversed' : 'Cancelled', now, transactionId]
+      );
+
+      // If credit sale, take the debt back off the customer's balance
+      if (wasCompleted && transaction.sales_type === 'Credit' && transaction.customer_id) {
+        await this.recordCreditTransaction(
+          transaction.customer_id,
+          transactionId,
+          transaction.net_amount,
+          transaction.amount_paid,
+          'SaleRevert'
+        );
+
+        await db.run(
+          'UPDATE credit_transactions SET is_reverted = 1 WHERE transaction_id = ? AND type = ?',
+          [transactionId, 'Sale']
+        );
+      }
+
+      return { success: true };
+    });
   }
 
   // ==================== TRANSACTION QUERIES ====================
