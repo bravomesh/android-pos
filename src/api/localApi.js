@@ -28,9 +28,56 @@ const wrapResponse = (data) => ({
 });
 
 /**
+ * The original HTTP-era components call `fetchAll`, `fetchByPages`,
+ * `fetchById`, `createNew` and `searchByIdAndGetByPages` on every entity
+ * module (see ApiAutoFetchDatagrid.js / product/customer/vendor/expense/
+ * receiving list+form screens). This adds those names on top of the modern
+ * `getAll/getById/create/update/delete` object without changing the latter.
+ *
+ * On-device datasets are small, so `fetchAll`/`fetchByPages` both just
+ * return every row with an empty pagination header (getPaginationInfo(undefined)
+ * degrades to `{}`, which the datagrid/pagination controls already handle
+ * gracefully — footer is hidden, prev/next are inert).
+ *
+ * `searchByIdAndGetByPages` matches the legacy "type an id or a name" search
+ * box behaviour: exact match on `id`, partial (case-insensitive) match on any
+ * of `searchFields`.
+ */
+const BIG_LIMIT = 1000000;
+
+const withLegacyMethods = (baseApi, { supportsPaging = true, searchFields = [] } = {}) => {
+  const fetchAll = async () =>
+    (supportsPaging ? baseApi.getAll({ limit: BIG_LIMIT }) : baseApi.getAll());
+
+  const searchByIdAndGetByPages = async (query) => {
+    const res = await fetchAll();
+    const q = String(query).trim().toLowerCase();
+
+    const list = (res.data || []).filter((row) => {
+      if (String(row.id).toLowerCase() === q) return true;
+      return searchFields.some(
+        (field) => row[field] !== undefined && row[field] !== null &&
+          String(row[field]).toLowerCase().includes(q)
+      );
+    });
+
+    return wrapResponse(list);
+  };
+
+  return {
+    ...baseApi,
+    fetchAll,
+    fetchByPages: fetchAll,
+    fetchById: (id) => baseApi.getById(id),
+    createNew: (data) => baseApi.create(data),
+    searchByIdAndGetByPages
+  };
+};
+
+/**
  * Products API
  */
-export const productsApi = {
+const productsApiBase = {
   getAll: async (params = {}) => {
     const result = await ProductsService.getAllProducts(params);
     return wrapResponse(result.list);
@@ -57,13 +104,22 @@ export const productsApi = {
   }
 };
 
+export const productsApi = withLegacyMethods(productsApiBase, {
+  searchFields: ['name', 'description']
+});
+
 /**
  * Product Types API
  */
-export const productTypesApi = {
+const productTypesApiBase = {
   getAll: async () => {
     const types = await ProductsService.getAllProductTypes();
     return wrapResponse(types);
+  },
+
+  getById: async (id) => {
+    const type = await ProductsService.getProductTypeById(id);
+    return wrapResponse(type);
   },
 
   create: async (data) => {
@@ -82,10 +138,15 @@ export const productTypesApi = {
   }
 };
 
+export const productTypesApi = withLegacyMethods(productTypesApiBase, {
+  supportsPaging: false,
+  searchFields: ['description']
+});
+
 /**
  * Customers API
  */
-export const customersApi = {
+const customersApiBase = {
   getAll: async (params = {}) => {
     const result = await CustomersService.getAllCustomers(params);
     return wrapResponse(result.list);
@@ -117,10 +178,14 @@ export const customersApi = {
   }
 };
 
+export const customersApi = withLegacyMethods(customersApiBase, {
+  searchFields: ['name', 'email', 'mobile', 'address']
+});
+
 /**
  * Vendors API
  */
-export const vendorsApi = {
+const vendorsApiBase = {
   getAll: async (params = {}) => {
     const result = await VendorsService.getAllVendors(params);
     return wrapResponse(result.list);
@@ -147,12 +212,23 @@ export const vendorsApi = {
   }
 };
 
+export const vendorsApi = withLegacyMethods(vendorsApiBase, {
+  searchFields: ['name', 'email', 'mobile', 'address']
+});
+
 /**
  * Sales/Transaction API
+ *
+ * Single-register app: only one sale can be in flight at a time, so the
+ * transaction id created by getTransactionId() is kept in module scope and
+ * consumed by the next saveNormalSale() call.
  */
+let currentTransactionId = null;
+
 export const transactionApi = {
   getTransactionId: async () => {
     const id = await SalesService.initTransaction();
+    currentTransactionId = id;
     return wrapResponse(id);
   },
 
@@ -191,18 +267,54 @@ export const transactionApi = {
     return wrapResponse(sales);
   },
 
-  // Alias for saveNormalSale used in original code
-  saveNormalSale: async (data) => {
-    // This is called from the checkout flow
-    // The transaction should already be created, this just completes it
-    return wrapResponse({ success: true });
+  /**
+   * Completes the counter sale started by getTransactionId().
+   *
+   * `sale` (from NormalSale.js) is `{ items, total, taxAmount, totalDiscount,
+   * netTotal }` — no transactionId, since this is a single-register app and
+   * the id was already stashed by getTransactionId(). `items` are cart lines
+   * shaped `{ id, name, qty, price, discount, discountTotal, sellingPrice,
+   * totalPrice }`.
+   *
+   * Each item is persisted via SalesService.updateCart (source of truth for
+   * per-line qty/discount/price), then the sale is finalized with
+   * checkoutCounterSale, which re-derives totals from the persisted lines and
+   * deducts stock. The cart-level total/tax/discount fields on `sale` are not
+   * re-applied here to avoid double counting on top of the persisted lines.
+   *
+   * The current-transaction register is only cleared on success, so a failed
+   * checkout (e.g. insufficient stock) leaves the transaction open for retry
+   * and the error propagates to the caller instead of being swallowed.
+   */
+  saveNormalSale: async (sale) => {
+    const transactionId = currentTransactionId;
+
+    if (!transactionId) {
+      throw new Error('No active transaction. Please start a new sale.');
+    }
+
+    const items = (sale && sale.items) || [];
+
+    for (const item of items) {
+      await SalesService.updateCart(transactionId, {
+        productId: item.id,
+        qty: item.qty,
+        discount: item.discount
+      });
+    }
+
+    const result = await SalesService.checkoutCounterSale(transactionId, {});
+
+    currentTransactionId = null;
+
+    return wrapResponse(result);
   }
 };
 
 /**
  * Receivings API
  */
-export const receivingsApi = {
+const receivingsApiBase = {
   getAll: async (params = {}) => {
     const result = await ReceivingsService.getAllReceivings(params);
     return wrapResponse(result.list);
@@ -229,10 +341,14 @@ export const receivingsApi = {
   }
 };
 
+export const receivingsApi = withLegacyMethods(receivingsApiBase, {
+  searchFields: ['product_name', 'vendor_name']
+});
+
 /**
  * Expenses API
  */
-export const expensesApi = {
+const expensesApiBase = {
   getAll: async (params = {}) => {
     const result = await ExpensesService.getAllExpenses(params);
     return wrapResponse(result.list);
@@ -259,13 +375,22 @@ export const expensesApi = {
   }
 };
 
+export const expensesApi = withLegacyMethods(expensesApiBase, {
+  searchFields: ['description']
+});
+
 /**
  * Expense Types API
  */
-export const expenseTypesApi = {
+const expenseTypesApiBase = {
   getAll: async () => {
     const types = await ExpensesService.getAllExpenseTypes();
     return wrapResponse(types);
+  },
+
+  getById: async (id) => {
+    const type = await ExpensesService.getExpenseTypeById(id);
+    return wrapResponse(type);
   },
 
   create: async (data) => {
@@ -283,6 +408,11 @@ export const expenseTypesApi = {
     return wrapResponse(result);
   }
 };
+
+export const expenseTypesApi = withLegacyMethods(expenseTypesApiBase, {
+  supportsPaging: false,
+  searchFields: ['description']
+});
 
 /**
  * Users API
@@ -377,6 +507,11 @@ export const reportsApi = {
 
   getProfitLoss: async (startDate, endDate) => {
     const report = await ReportsService.getProfitLossReport(startDate, endDate);
+    return wrapResponse(report);
+  },
+
+  getSalesTrend: async (startDate, endDate) => {
+    const report = await ReportsService.getSalesTrend(startDate, endDate);
     return wrapResponse(report);
   }
 };

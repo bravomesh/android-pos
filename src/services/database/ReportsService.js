@@ -317,6 +317,149 @@ class ReportsService {
       dateRange: { start, end }
     };
   }
+
+  /**
+   * Per-day sales & gross profit series for charting (dashboard trend).
+   * Two queries (sales, then cogs) merged by day in JS to avoid the
+   * fan-out from joining transaction_headers to transaction_details,
+   * which would multiply net_amount by the line count per transaction.
+   * @param {string|null} [startDate]
+   * @param {string|null} [endDate]
+   */
+  async getSalesTrend(startDate = null, endDate = null) {
+    const today = new Date().toISOString().split('T')[0];
+    const start = startDate || today;
+    const end = endDate || today;
+
+    // Sales per day — headers only (no join → no multiplication).
+    const salesRows = await db.query(
+      `SELECT DATE(created_at) as day, COALESCE(SUM(net_amount), 0) as sales
+       FROM transaction_headers
+       WHERE DATE(created_at) BETWEEN ? AND ?
+         AND transaction_status = 'Done'
+         AND is_active = 1
+       GROUP BY DATE(created_at)
+       ORDER BY day ASC`,
+      [start, end]
+    );
+
+    // COGS per day — details joined to their (Done) headers.
+    const cogsRows = await db.query(
+      `SELECT DATE(th.created_at) as day, COALESCE(SUM(td.qty * td.cost_price), 0) as cogs
+       FROM transaction_details td
+       JOIN transaction_headers th ON td.transaction_id = th.id
+       WHERE DATE(th.created_at) BETWEEN ? AND ?
+         AND th.transaction_status = 'Done'
+         AND th.is_active = 1
+       GROUP BY DATE(th.created_at)`,
+      [start, end]
+    );
+
+    const cogsByDay = new Map(cogsRows.map(r => [r.day, r.cogs]));
+    const days = salesRows.map(r => ({
+      date: r.day,
+      sales: r.sales,
+      profit: r.sales - (cogsByDay.get(r.day) || 0)
+    }));
+
+    return {
+      days,
+      dateRange: { start, end }
+    };
+  }
+
+  /**
+   * Aggregate everything the daily PDF report needs for a given date.
+   * @param {string} date - 'YYYY-MM-DD' local date
+   */
+  async getDailyExportData(date) {
+    const summaryRows = await db.query(
+      `SELECT
+         COUNT(*) AS total_count,
+         SUM(CASE WHEN sales_type = 'Counter' THEN 1 ELSE 0 END) AS counter_count,
+         SUM(CASE WHEN sales_type = 'Counter' THEN net_amount ELSE 0 END) AS counter_total,
+         SUM(CASE WHEN sales_type = 'Credit'  THEN 1 ELSE 0 END) AS credit_count,
+         SUM(CASE WHEN sales_type = 'Credit'  THEN net_amount ELSE 0 END) AS credit_total,
+         COALESCE(SUM(net_amount), 0) AS total_revenue,
+         COALESCE(SUM(tax_amount), 0) AS total_tax,
+         COALESCE(SUM(discount_on_total + discount_on_items), 0) AS total_discount
+       FROM transaction_headers
+       WHERE DATE(created_at) = ?
+         AND transaction_status = 'Done'
+         AND is_active = 1`,
+      [date]
+    );
+
+    const transactions = await db.query(
+      `SELECT
+         th.id,
+         th.created_at,
+         th.sales_type,
+         th.net_amount,
+         c.name AS customer_name,
+         (SELECT COALESCE(SUM(qty), 0)
+            FROM transaction_details
+            WHERE transaction_id = th.id) AS items_count
+       FROM transaction_headers th
+       LEFT JOIN customers c ON th.customer_id = c.id
+       WHERE DATE(th.created_at) = ?
+         AND th.transaction_status = 'Done'
+         AND th.is_active = 1
+       ORDER BY th.created_at ASC`,
+      [date]
+    );
+
+    const topProducts = await db.query(
+      `SELECT
+         p.name,
+         SUM(td.qty) AS qty_sold,
+         SUM(td.price) AS revenue
+       FROM transaction_details td
+       JOIN transaction_headers th ON td.transaction_id = th.id
+       JOIN products p ON td.product_id = p.id
+       WHERE DATE(th.created_at) = ?
+         AND th.transaction_status = 'Done'
+         AND th.is_active = 1
+       GROUP BY p.id
+       ORDER BY qty_sold DESC
+       LIMIT 10`,
+      [date]
+    );
+
+    const expenses = await db.query(
+      `SELECT
+         e.amount,
+         COALESCE(et.description, 'Uncategorised') AS type
+       FROM expenses e
+       LEFT JOIN expense_types et ON e.expense_type_id = et.id
+       WHERE DATE(e.spent_at) = ?
+       ORDER BY e.spent_at ASC`,
+      [date]
+    );
+
+    const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const summary = summaryRows[0] || {};
+    const totalRevenue = summary.total_revenue || 0;
+
+    return {
+      date,
+      summary: {
+        totalTransactions: summary.total_count || 0,
+        counterCount: summary.counter_count || 0,
+        counterTotal: summary.counter_total || 0,
+        creditCount: summary.credit_count || 0,
+        creditTotal: summary.credit_total || 0,
+        totalRevenue,
+        totalTax: summary.total_tax || 0,
+        totalDiscount: summary.total_discount || 0
+      },
+      transactions,
+      topProducts,
+      expenses,
+      expensesTotal,
+      netForDay: totalRevenue - expensesTotal
+    };
+  }
 }
 
 export default new ReportsService();

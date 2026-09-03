@@ -1,10 +1,42 @@
+# Dependencies
 node_modules/
+.yarn/
+.pnp.*
+
+# Build output
 build/
-android/
+dist/
+coverage/
+
+# Native projects (regenerate with `npx cap add android`)
 ios/
-.DS_Store
-*.log
-npm-debug.log*
+
+# Environment
 .env
 .env.local
-coverage/
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Tests (not tracked in this repo)
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+__tests__/
+__mocks__/
+
+# Working notes and generated design docs
+docs/
+.superpowers/
+.claude/
+IMPLEMENTATION_SUMMARY.md
+architecture.md

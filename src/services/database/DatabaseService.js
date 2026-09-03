@@ -240,6 +240,16 @@ class DatabaseService {
         FOREIGN KEY (vendor_id) REFERENCES vendors(id)
       );
 
+      -- Daily export tracking (backup feature)
+      CREATE TABLE IF NOT EXISTS daily_exports (
+        date TEXT PRIMARY KEY,
+        exported_at TEXT NOT NULL,
+        pdf_path TEXT NOT NULL,
+        db_path TEXT NOT NULL,
+        status TEXT NOT NULL,
+        error_message TEXT
+      );
+
       -- Create indexes for better performance
       CREATE INDEX IF NOT EXISTS idx_products_type ON products(product_type_id);
       CREATE INDEX IF NOT EXISTS idx_stock_qty ON stock(qty);
@@ -298,10 +308,25 @@ class DatabaseService {
   async run(sql, params = []) {
     try {
       const result = await this.db.run(sql, params);
+      await this.persistWebStore();
       return result;
     } catch (error) {
       console.error('Run error:', sql, error);
       throw error;
+    }
+  }
+
+  /**
+   * On web, jeep-sqlite keeps the database in memory; writes are lost on
+   * page reload unless flushed to IndexedDB. Native platforms write to a
+   * real file, so this is a no-op there.
+   */
+  async persistWebStore() {
+    if (this.platform !== 'web') return;
+    try {
+      await this.sqlite.saveToStore(this.dbName);
+    } catch (error) {
+      console.error('saveToStore error:', error);
     }
   }
 
@@ -317,6 +342,7 @@ class DatabaseService {
       }
 
       await this.db.execute('COMMIT');
+      await this.persistWebStore();
       return true;
     } catch (error) {
       await this.db.execute('ROLLBACK');
@@ -344,6 +370,20 @@ class DatabaseService {
       await this.sqlite.closeConnection(this.dbName, false);
       this.initialized = false;
     }
+  }
+
+  /**
+   * Return the on-device path of the SQLite file for the current platform.
+   * Used by the backup feature to copy the raw DB file.
+   */
+  getDatabaseFilePath() {
+    if (this.platform === 'android') {
+      return `/data/data/com.pos.mobilepos/databases/${this.dbName}SQLite.db`;
+    }
+    if (this.platform === 'ios') {
+      return `Library/CapacitorDatabase/${this.dbName}SQLite.db`;
+    }
+    return null;
   }
 }
 

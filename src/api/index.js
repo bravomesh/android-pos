@@ -30,61 +30,41 @@ const auth = {
   }
 };
 
-const productType = {
-  getAll: () => productTypesApi.getAll(),
-  get: (id) => productTypesApi.getById(id),
-  create: (data) => productTypesApi.create(data),
-  update: (id, data) => productTypesApi.update(id, data),
-  delete: (id) => productTypesApi.delete(id)
-};
+// Every entity below exposes both the modern names (getAll/get/create/...)
+// and the legacy HTTP-era names components actually call (fetchAll/
+// fetchByPages/fetchById/createNew/searchByIdAndGetByPages). See
+// src/api/localApi.js `withLegacyMethods` for how the legacy names are
+// implemented on top of the local SQLite services.
+const buildEntity = (localEntityApi) => ({
+  getAll: (params) => localEntityApi.getAll(params),
+  get: (id) => localEntityApi.getById(id),
+  create: (data) => localEntityApi.create(data),
+  update: (id, data) => localEntityApi.update(id, data),
+  delete: (id) => localEntityApi.delete(id),
 
-const expenseType = {
-  getAll: () => expenseTypesApi.getAll(),
-  get: (id) => expenseTypesApi.getById(id),
-  create: (data) => expenseTypesApi.create(data),
-  update: (id, data) => expenseTypesApi.update(id, data),
-  delete: (id) => expenseTypesApi.delete(id)
-};
+  fetchAll: () => localEntityApi.fetchAll(),
+  fetchByPages: () => localEntityApi.fetchByPages(),
+  fetchById: (id) => localEntityApi.fetchById(id),
+  createNew: (data) => localEntityApi.createNew(data),
+  searchByIdAndGetByPages: (query) => localEntityApi.searchByIdAndGetByPages(query)
+});
 
-const expense = {
-  getAll: (params) => expensesApi.getAll(params),
-  get: (id) => expensesApi.getById(id),
-  create: (data) => expensesApi.create(data),
-  update: (id, data) => expensesApi.update(id, data),
-  delete: (id) => expensesApi.delete(id)
-};
+const productType = buildEntity(productTypesApi);
 
-const product = {
-  getAll: (params) => productsApi.getAll(params),
-  get: (id) => productsApi.getById(id),
-  create: (data) => productsApi.create(data),
-  update: (id, data) => productsApi.update(id, data),
-  delete: (id) => productsApi.delete(id)
-};
+const expenseType = buildEntity(expenseTypesApi);
+
+const expense = buildEntity(expensesApi);
+
+const product = buildEntity(productsApi);
 
 const customer = {
-  getAll: (params) => customersApi.getAll(params),
-  get: (id) => customersApi.getById(id),
-  create: (data) => customersApi.create(data),
-  update: (id, data) => customersApi.update(id, data),
-  delete: (id) => customersApi.delete(id)
+  ...buildEntity(customersApi),
+  getBalance: (id) => customersApi.getBalance(id)
 };
 
-const vendor = {
-  getAll: (params) => vendorsApi.getAll(params),
-  get: (id) => vendorsApi.getById(id),
-  create: (data) => vendorsApi.create(data),
-  update: (id, data) => vendorsApi.update(id, data),
-  delete: (id) => vendorsApi.delete(id)
-};
+const vendor = buildEntity(vendorsApi);
 
-const receiving = {
-  getAll: (params) => receivingsApi.getAll(params),
-  get: (id) => receivingsApi.getById(id),
-  create: (data) => receivingsApi.create(data),
-  update: (id, data) => receivingsApi.update(id, data),
-  delete: (id) => receivingsApi.delete(id)
-};
+const receiving = buildEntity(receivingsApi);
 
 const transaction = {
   getTransactionId: () => transactionApi.getTransactionId(),
@@ -102,7 +82,8 @@ const reports = {
   getExpenses: (startDate, endDate) => reportsApi.getExpenses(startDate, endDate),
   getSalesByProduct: (startDate, endDate) => reportsApi.getSalesByProduct(startDate, endDate),
   getLowStock: (threshold) => reportsApi.getLowStock(threshold),
-  getProfitLoss: (startDate, endDate) => reportsApi.getProfitLoss(startDate, endDate)
+  getProfitLoss: (startDate, endDate) => reportsApi.getProfitLoss(startDate, endDate),
+  getSalesTrend: (startDate, endDate) => reportsApi.getSalesTrend(startDate, endDate)
 };
 
 export default {
