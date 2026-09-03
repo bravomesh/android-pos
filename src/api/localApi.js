@@ -101,11 +101,38 @@ const productsApiBase = {
   delete: async (id) => {
     const result = await ProductsService.deleteProduct(id);
     return wrapResponse(result);
+  },
+
+  /** Exact match on a scanned barcode or a typed shelf code. */
+  findByCode: async (code) => {
+    const product = await ProductsService.findByCode(code);
+    return wrapResponse(product);
+  },
+
+  /** Breakage, spoilage, theft, or a physical count. */
+  adjustStock: async (payload, userId = null) => {
+    const result = await ProductsService.adjustStock(payload, userId);
+    return wrapResponse(result);
+  },
+
+  getStockAdjustments: async (params = {}) => {
+    const rows = await ProductsService.getStockAdjustments(params);
+    return wrapResponse(rows);
+  },
+
+  getStockValuation: async () => {
+    const result = await ProductsService.getStockValuation();
+    return wrapResponse(result);
+  },
+
+  getLowStock: async (threshold = null) => {
+    const rows = await ProductsService.getLowStockItems(threshold);
+    return wrapResponse(rows);
   }
 };
 
 export const productsApi = withLegacyMethods(productsApiBase, {
-  searchFields: ['name', 'description']
+  searchFields: ['name', 'description', 'sku', 'barcode']
 });
 
 /**
@@ -462,6 +489,11 @@ export const usersApi = {
 
   delete: async (id) => {
     const result = await UsersService.deleteUser(id);
+    return wrapResponse(result);
+  },
+
+  changePassword: async (id, oldPassword, newPassword) => {
+    const result = await UsersService.changePassword(id, oldPassword, newPassword);
     return wrapResponse(result);
   }
 };

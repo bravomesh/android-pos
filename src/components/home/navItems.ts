@@ -7,6 +7,8 @@ import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import MoveToInboxIcon from "@mui/icons-material/MoveToInbox";
 import ReceiptIcon from "@mui/icons-material/Receipt";
 import BackupIcon from "@mui/icons-material/Backup";
+import WarehouseIcon from "@mui/icons-material/Warehouse";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
 
 export interface NavItem {
   label: string;
@@ -18,9 +20,11 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", path: "/dashboard", icon: createElement(DashboardIcon) },
   { label: "Sale", path: "/sale", icon: createElement(PointOfSaleIcon) },
   { label: "Products", path: "/products", icon: createElement(Inventory2Icon) },
+  { label: "Stock", path: "/stock", icon: createElement(WarehouseIcon) },
   { label: "Customers", path: "/customers", icon: createElement(PeopleIcon) },
   { label: "Vendors", path: "/vendors", icon: createElement(LocalShippingIcon) },
   { label: "Receivings", path: "/receivings", icon: createElement(MoveToInboxIcon) },
   { label: "Expenses", path: "/expense", icon: createElement(ReceiptIcon) },
   { label: "Backup", path: "/admin/backup", icon: createElement(BackupIcon) },
+  { label: "Users", path: "/users", icon: createElement(ManageAccountsIcon) },
 ];

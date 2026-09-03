@@ -15,7 +15,8 @@ import {
   expensesApi,
   expenseTypesApi,
   authApi,
-  reportsApi
+  reportsApi,
+  usersApi
 } from './localApi';
 
 // Map to original API structure used by components
@@ -55,7 +56,14 @@ const expenseType = buildEntity(expenseTypesApi);
 
 const expense = buildEntity(expensesApi);
 
-const product = buildEntity(productsApi);
+const product = {
+  ...buildEntity(productsApi),
+  findByCode: (code) => productsApi.findByCode(code),
+  adjustStock: (payload, userId) => productsApi.adjustStock(payload, userId),
+  getStockAdjustments: (params) => productsApi.getStockAdjustments(params),
+  getStockValuation: () => productsApi.getStockValuation(),
+  getLowStock: (threshold) => productsApi.getLowStock(threshold)
+};
 
 const customer = {
   ...buildEntity(customersApi),
@@ -73,6 +81,16 @@ const transaction = {
   removeFromCart: (transactionId, productId) => transactionApi.removeFromCart(transactionId, productId),
   checkoutCounterSale: (transactionId, data) => transactionApi.checkoutCounterSale(transactionId, data),
   checkoutCreditSale: (transactionId, data) => transactionApi.checkoutCreditSale(transactionId, data)
+};
+
+const user = {
+  getAll: () => usersApi.getAll(),
+  get: (id) => usersApi.getById(id),
+  create: (data) => usersApi.create(data),
+  update: (id, data) => usersApi.update(id, data),
+  delete: (id) => usersApi.delete(id),
+  changePassword: (id, oldPassword, newPassword) =>
+    usersApi.changePassword(id, oldPassword, newPassword)
 };
 
 const reports = {
@@ -96,5 +114,6 @@ export default {
   vendor,
   receiving,
   transaction,
-  reports
+  reports,
+  user
 };

@@ -18,6 +18,9 @@ import SalePage from "../sale/SalePage";
 import NotFound from "../notFound/NotFound";
 import BackupAdminPanel from "../backup/BackupAdminPanel";
 import Dashboard from "../dashboard/Dashboard";
+import StockPage from "../stock/StockPage";
+import UsersPage from "../users/UsersPage";
+import UserFormPage from "../users/UserFormPage";
 
 const Routes = () => (
   <RouterRoutes>
@@ -58,6 +61,13 @@ const Routes = () => (
     <Route path="/products" element={<ProductsPage />} />
     <Route path="/products/new" element={<ProductFormPage />} />
     <Route path="/products/edit/:id" element={<ProductFormPage />} />
+
+    {/* Stock */}
+    <Route path="/stock" element={<StockPage />} />
+
+    {/* Users */}
+    <Route path="/users" element={<UsersPage />} />
+    <Route path="/users/new" element={<UserFormPage />} />
 
     {/* Product Type */}
     <Route path="/producttypes" element={<ProductTypesPage />} />

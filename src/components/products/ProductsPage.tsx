@@ -8,6 +8,10 @@ import api from "../../api";
 interface ProductRow {
   id: number;
   name: string;
+  sku: string | null;
+  unit: string;
+  reorder_level: number | null;
+  track_stock: number;
   product_type_name: string | null;
   selling_price: number;
   stock_qty: number;
@@ -15,9 +19,24 @@ interface ProductRow {
 
 const columns: ColumnDef<ProductRow>[] = [
   { key: "name", label: "Name", primary: true },
-  { key: "product_type_name", label: "Type", secondary: true },
+  {
+    key: "sku",
+    label: "Code",
+    secondary: true,
+    render: (row) => row.sku || row.product_type_name || "—",
+  },
   { key: "selling_price", label: "Selling Price" },
-  { key: "stock_qty", label: "Stock" },
+  {
+    key: "stock_qty",
+    label: "Stock",
+    // A service has no stock to show, and a product at or below its reorder
+    // level is called out where the shopkeeper is already looking.
+    render: (row) => {
+      if (!row.track_stock) return "—";
+      const low = row.reorder_level !== null && Number(row.stock_qty) <= Number(row.reorder_level);
+      return `${row.stock_qty} ${row.unit || ""}${low ? " (low)" : ""}`.trim();
+    },
+  },
 ];
 
 export default function ProductsPage() {
