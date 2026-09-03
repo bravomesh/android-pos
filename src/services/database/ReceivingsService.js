@@ -3,6 +3,7 @@
  */
 
 import db from './DatabaseService';
+import { localDay } from './businessDay';
 import ProductsService from './ProductsService';
 
 class ReceivingsService {
@@ -62,7 +63,9 @@ class ReceivingsService {
    */
   async createReceiving(data) {
     const now = new Date().toISOString();
-    const payedAt = data.payedAt || now;
+    // payed_at is filtered as a plain calendar date (see businessDay.js),
+    // so it defaults to the local day rather than the UTC instant.
+    const payedAt = data.payedAt || localDay();
 
     // Validate product exists
     const product = await ProductsService.getProductById(data.productId);

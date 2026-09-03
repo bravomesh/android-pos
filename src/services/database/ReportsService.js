@@ -3,13 +3,14 @@
  */
 
 import db from './DatabaseService';
+import { localDay, localDayOf } from './businessDay';
 
 class ReportsService {
   /**
    * Get dashboard metrics
    */
   async getDashboardMetrics(startDate = null, endDate = null) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const start = startDate || today;
     const end = endDate || today;
 
@@ -20,7 +21,7 @@ class ReportsService {
         COALESCE(SUM(net_amount), 0) as total_sales,
         COALESCE(SUM(CASE WHEN sales_type = 'Credit' THEN net_amount - amount_paid ELSE 0 END), 0) as credit_outstanding
       FROM transaction_headers
-      WHERE DATE(created_at) BETWEEN ? AND ?
+      WHERE ${localDayOf('created_at')} BETWEEN ? AND ?
         AND transaction_status = 'Done'
         AND is_active = 1`,
       [start, end]
@@ -31,7 +32,7 @@ class ReportsService {
       `SELECT COALESCE(SUM(td.qty), 0) as items_sold
        FROM transaction_details td
        JOIN transaction_headers th ON td.transaction_id = th.id
-       WHERE DATE(th.created_at) BETWEEN ? AND ?
+       WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
          AND th.transaction_status = 'Done'
          AND th.is_active = 1`,
       [start, end]
@@ -75,7 +76,7 @@ class ReportsService {
    * Get today's sales report
    */
   async getTodaySales() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
 
     const transactions = await db.query(
       `SELECT
@@ -83,7 +84,7 @@ class ReportsService {
         c.name as customer_name
       FROM transaction_headers th
       LEFT JOIN customers c ON th.customer_id = c.id
-      WHERE DATE(th.created_at) = ?
+      WHERE ${localDayOf('th.created_at')} = ?
         AND th.transaction_status = 'Done'
         AND th.is_active = 1
       ORDER BY th.created_at DESC`,
@@ -96,7 +97,7 @@ class ReportsService {
         COALESCE(SUM(net_amount), 0) as total,
         COALESCE(SUM(amount_paid), 0) as paid
       FROM transaction_headers
-      WHERE DATE(created_at) = ?
+      WHERE ${localDayOf('created_at')} = ?
         AND transaction_status = 'Done'
         AND is_active = 1`,
       [today]
@@ -113,7 +114,7 @@ class ReportsService {
    * Get credit sales report
    */
   async getCreditSales(startDate = null, endDate = null) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const start = startDate || '1970-01-01';
     const end = endDate || today;
 
@@ -126,7 +127,7 @@ class ReportsService {
       FROM transaction_headers th
       JOIN customers c ON th.customer_id = c.id
       WHERE th.sales_type = 'Credit'
-        AND DATE(th.created_at) BETWEEN ? AND ?
+        AND ${localDayOf('th.created_at')} BETWEEN ? AND ?
         AND th.transaction_status = 'Done'
         AND th.is_active = 1
       ORDER BY th.created_at DESC`,
@@ -141,7 +142,7 @@ class ReportsService {
         COALESCE(SUM(net_amount - amount_paid), 0) as outstanding
       FROM transaction_headers
       WHERE sales_type = 'Credit'
-        AND DATE(created_at) BETWEEN ? AND ?
+        AND ${localDayOf('created_at')} BETWEEN ? AND ?
         AND transaction_status = 'Done'
         AND is_active = 1`,
       [start, end]
@@ -158,7 +159,7 @@ class ReportsService {
    * Get expense report
    */
   async getExpenseReport(startDate = null, endDate = null) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const start = startDate || today;
     const end = endDate || today;
 
@@ -206,7 +207,7 @@ class ReportsService {
    * Get sales by product report
    */
   async getSalesByProduct(startDate = null, endDate = null) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const start = startDate || '1970-01-01';
     const end = endDate || today;
 
@@ -237,7 +238,7 @@ class ReportsService {
           SUM(td.qty * td.cost_price) as cost
         FROM transaction_details td
         JOIN transaction_headers th ON td.transaction_id = th.id
-        WHERE DATE(th.created_at) BETWEEN ? AND ?
+        WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
           AND th.transaction_status = 'Done'
           AND th.is_active = 1
         GROUP BY td.product_id
@@ -288,7 +289,7 @@ class ReportsService {
    * Get profit/loss report
    */
   async getProfitLossReport(startDate = null, endDate = null) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const start = startDate || today;
     const end = endDate || today;
 
@@ -296,7 +297,7 @@ class ReportsService {
     const revenueResult = await db.query(
       `SELECT COALESCE(SUM(net_amount), 0) as revenue
        FROM transaction_headers
-       WHERE DATE(created_at) BETWEEN ? AND ?
+       WHERE ${localDayOf('created_at')} BETWEEN ? AND ?
          AND transaction_status = 'Done'
          AND is_active = 1`,
       [start, end]
@@ -307,7 +308,7 @@ class ReportsService {
       `SELECT COALESCE(SUM(td.qty * td.cost_price), 0) as cogs
        FROM transaction_details td
        JOIN transaction_headers th ON td.transaction_id = th.id
-       WHERE DATE(th.created_at) BETWEEN ? AND ?
+       WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
          AND th.transaction_status = 'Done'
          AND th.is_active = 1`,
       [start, end]
@@ -348,31 +349,31 @@ class ReportsService {
    * @param {string|null} [endDate]
    */
   async getSalesTrend(startDate = null, endDate = null) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
     const start = startDate || today;
     const end = endDate || today;
 
     // Sales per day — headers only (no join → no multiplication).
     const salesRows = await db.query(
-      `SELECT DATE(created_at) as day, COALESCE(SUM(net_amount), 0) as sales
+      `SELECT ${localDayOf('created_at')} as day, COALESCE(SUM(net_amount), 0) as sales
        FROM transaction_headers
-       WHERE DATE(created_at) BETWEEN ? AND ?
+       WHERE ${localDayOf('created_at')} BETWEEN ? AND ?
          AND transaction_status = 'Done'
          AND is_active = 1
-       GROUP BY DATE(created_at)
+       GROUP BY ${localDayOf('created_at')}
        ORDER BY day ASC`,
       [start, end]
     );
 
     // COGS per day — details joined to their (Done) headers.
     const cogsRows = await db.query(
-      `SELECT DATE(th.created_at) as day, COALESCE(SUM(td.qty * td.cost_price), 0) as cogs
+      `SELECT ${localDayOf('th.created_at')} as day, COALESCE(SUM(td.qty * td.cost_price), 0) as cogs
        FROM transaction_details td
        JOIN transaction_headers th ON td.transaction_id = th.id
-       WHERE DATE(th.created_at) BETWEEN ? AND ?
+       WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
          AND th.transaction_status = 'Done'
          AND th.is_active = 1
-       GROUP BY DATE(th.created_at)`,
+       GROUP BY ${localDayOf('th.created_at')}`,
       [start, end]
     );
 
@@ -405,7 +406,7 @@ class ReportsService {
          COALESCE(SUM(tax_amount), 0) AS total_tax,
          COALESCE(SUM(discount_on_total + discount_on_items), 0) AS total_discount
        FROM transaction_headers
-       WHERE DATE(created_at) = ?
+       WHERE ${localDayOf('created_at')} = ?
          AND transaction_status = 'Done'
          AND is_active = 1`,
       [date]
@@ -423,7 +424,7 @@ class ReportsService {
             WHERE transaction_id = th.id) AS items_count
        FROM transaction_headers th
        LEFT JOIN customers c ON th.customer_id = c.id
-       WHERE DATE(th.created_at) = ?
+       WHERE ${localDayOf('th.created_at')} = ?
          AND th.transaction_status = 'Done'
          AND th.is_active = 1
        ORDER BY th.created_at ASC`,
@@ -438,7 +439,7 @@ class ReportsService {
        FROM transaction_details td
        JOIN transaction_headers th ON td.transaction_id = th.id
        JOIN products p ON td.product_id = p.id
-       WHERE DATE(th.created_at) = ?
+       WHERE ${localDayOf('th.created_at')} = ?
          AND th.transaction_status = 'Done'
          AND th.is_active = 1
        GROUP BY p.id

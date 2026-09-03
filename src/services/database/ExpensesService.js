@@ -3,6 +3,7 @@
  */
 
 import db from './DatabaseService';
+import { localDay } from './businessDay';
 
 class ExpensesService {
   // ==================== EXPENSE TYPES ====================
@@ -121,7 +122,10 @@ class ExpensesService {
    */
   async createExpense(data) {
     const now = new Date().toISOString();
-    const spentAt = data.spentAt || now;
+    // spent_at is compared as a plain calendar date, so an unspecified date
+    // defaults to the local day rather than the UTC instant — otherwise an
+    // evening expense in a western timezone books itself to tomorrow.
+    const spentAt = data.spentAt || localDay();
 
     const result = await db.run(
       `INSERT INTO expenses (description, amount, spent_at, expense_type_id, created_at, updated_at)

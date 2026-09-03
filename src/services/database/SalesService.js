@@ -10,6 +10,7 @@
  */
 
 import db from './DatabaseService';
+import { localDay, localDayOf } from './businessDay';
 import ProductsService from './ProductsService';
 
 class SalesService {
@@ -450,7 +451,7 @@ class SalesService {
    * Get today's transactions
    */
   async getTodayTransactions() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDay();
 
     const transactions = await db.query(
       `SELECT
@@ -458,7 +459,7 @@ class SalesService {
         c.name as customer_name
       FROM transaction_headers th
       LEFT JOIN customers c ON th.customer_id = c.id
-      WHERE DATE(th.created_at) = ?
+      WHERE ${localDayOf('th.created_at')} = ?
         AND th.transaction_status = 'Done'
         AND th.is_active = 1
       ORDER BY th.created_at DESC`,
@@ -478,7 +479,7 @@ class SalesService {
         c.name as customer_name
       FROM transaction_headers th
       LEFT JOIN customers c ON th.customer_id = c.id
-      WHERE DATE(th.created_at) BETWEEN ? AND ?
+      WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
         AND th.transaction_status = 'Done'
         AND th.is_active = 1
       ORDER BY th.created_at DESC`,
