@@ -21,11 +21,13 @@ export default function SalePage() {
   const isDesktop = useMediaQuery(theme.breakpoints.up("sm"));
   const dispatch = useDispatch();
   const cartItems = useSelector((state: RootState) => state.cart.items);
-  const { products, types, loading, search, filterByType } = useSaleProducts();
+  const { products, types, loading, search, filterByType, refresh, findByCode } =
+    useSaleProducts();
 
   const [activeType, setActiveType] = useState<number | string | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [term, setTerm] = useState("");
 
   // Guard against React 18 StrictMode's double-invoked effects creating two
   // transactions for a single mount.
@@ -62,11 +64,36 @@ export default function SalePage() {
     }
   };
 
+  /**
+   * A barcode scanner behaves like a keyboard that types the code and presses
+   * Enter, so submitting the search box is the scan path. An exact code match
+   * goes straight into the cart and clears the box, ready for the next item;
+   * anything else is left as an ordinary search.
+   */
+  const handleSearchSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const code = term.trim();
+    if (!code) return;
+
+    try {
+      const found = await findByCode(code);
+      if (!found) return;
+
+      handleAdd(found);
+      setTerm("");
+      search("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not look up that code");
+    }
+  };
+
   const handleCharge = () => setCheckoutOpen(true);
 
   const handleCheckoutCompleted = () => {
     setCheckoutOpen(false);
     setCartOpen(false);
+    // Stock levels on the grid are now one sale out of date.
+    refresh();
   };
 
   return (
@@ -89,14 +116,20 @@ export default function SalePage() {
         }}
       >
         <Box sx={{ position: "sticky", top: 0, zIndex: 1, bgcolor: "background.default", pb: 1.5 }}>
-          <TextField
-            fullWidth
-            placeholder="Search products"
-            size="small"
-            onChange={(e) => search(e.target.value)}
-            slotProps={{ htmlInput: { "data-testid": "sale-search-input" } }}
-            sx={{ mb: 1.5 }}
-          />
+          <Box component="form" onSubmit={handleSearchSubmit}>
+            <TextField
+              fullWidth
+              placeholder="Search or scan a barcode"
+              size="small"
+              value={term}
+              onChange={(e) => {
+                setTerm(e.target.value);
+                search(e.target.value);
+              }}
+              slotProps={{ htmlInput: { "data-testid": "sale-search-input" } }}
+              sx={{ mb: 1.5 }}
+            />
+          </Box>
           <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 0.5 }}>
             <Chip
               label="All"

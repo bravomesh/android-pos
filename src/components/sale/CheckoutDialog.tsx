@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -8,6 +8,9 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
+import MenuItem from "@mui/material/MenuItem";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import currency from "currency.js";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
@@ -30,21 +33,49 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
   const [amountPaid, setAmountPaid] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [salesType, setSalesType] = useState<"Counter" | "Credit">("Counter");
+  const [customerId, setCustomerId] = useState<string>("");
+  const [customers, setCustomers] = useState<{ id: number | string; name: string }[]>([]);
 
   const netTotal = summary.netTotal;
   const balance = currency(amountPaid || 0).subtract(netTotal);
   const change = balance.value > 0 ? balance : currency(0);
+  const owing = balance.value < 0 ? currency(0).subtract(balance) : currency(0);
+
+  // Customers are only needed for a credit sale, so they are fetched the
+  // first time the cashier switches to it.
+  useEffect(() => {
+    if (salesType !== "Credit" || customers.length > 0) return;
+
+    (async () => {
+      try {
+        const res = await api.customer.fetchAll();
+        setCustomers(res.data || []);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to load customers");
+      }
+    })();
+  }, [salesType, customers.length]);
 
   const handleClose = () => {
     if (submitting) return;
     setAmountPaid("");
     setError("");
+    setSalesType("Counter");
+    setCustomerId("");
     onClose();
   };
 
   const handleConfirm = async () => {
-    if (balance.value < 0) {
+    // A cash sale must cover the bill. A credit sale is allowed to fall
+    // short — that shortfall is exactly what the customer now owes.
+    if (salesType === "Counter" && balance.value < 0) {
       setError("You have entered a less amount than the bill. Please correct it");
+      return;
+    }
+
+    if (salesType === "Credit" && !customerId) {
+      setError("Choose the customer this sale is on account for");
       return;
     }
 
@@ -60,13 +91,17 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
         totalDiscount: currency(summary.discountOnItems).add(summary.discountOnTotal).value,
         netTotal: currency(netTotal).value,
         amountPaid: currency(amountPaid || 0).value,
+        salesType,
+        customerId: salesType === "Credit" ? customerId : undefined,
       };
 
       await api.transaction.saveNormalSale(sale);
 
-      toast.success("Sale completed");
+      toast.success(salesType === "Credit" ? "Sale recorded on account" : "Sale completed");
       dispatch(emptyCart());
       setAmountPaid("");
+      setSalesType("Counter");
+      setCustomerId("");
 
       // Start a fresh transaction so the next sale has an id.
       try {
@@ -94,8 +129,46 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
             <Typography data-testid="checkout-net-total">{currency(netTotal).format()}</Typography>
           </Box>
 
+          <ToggleButtonGroup
+            exclusive
+            fullWidth
+            value={salesType}
+            onChange={(_, value) => {
+              if (!value) return;
+              setSalesType(value);
+              setError("");
+            }}
+          >
+            <ToggleButton value="Counter" sx={{ minHeight: 48 }} data-testid="pay-cash">
+              Cash
+            </ToggleButton>
+            <ToggleButton value="Credit" sx={{ minHeight: 48 }} data-testid="pay-credit">
+              On account
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {salesType === "Credit" && (
+            <TextField
+              select
+              label="Customer"
+              value={customerId}
+              onChange={(e) => {
+                setCustomerId(e.target.value);
+                setError("");
+              }}
+              fullWidth
+              slotProps={{ htmlInput: { "data-testid": "credit-customer" } }}
+            >
+              {customers.map((c) => (
+                <MenuItem key={c.id} value={String(c.id)}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
           <TextField
-            label="Amount paid"
+            label={salesType === "Credit" ? "Paid now (may be nothing)" : "Amount paid"}
             type="number"
             value={amountPaid}
             onChange={(e) => {
@@ -110,8 +183,10 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
           />
 
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-            <Typography>Change</Typography>
-            <Typography data-testid="checkout-change">{change.format()}</Typography>
+            <Typography>{salesType === "Credit" ? "Balance owing" : "Change"}</Typography>
+            <Typography data-testid="checkout-change">
+              {salesType === "Credit" ? owing.format() : change.format()}
+            </Typography>
           </Box>
         </Box>
       </DialogContent>
