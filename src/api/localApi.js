@@ -277,10 +277,13 @@ export const transactionApi = {
    * totalPrice }`.
    *
    * Each item is persisted via SalesService.updateCart (source of truth for
-   * per-line qty/discount/price), then the sale is finalized with
-   * checkoutCounterSale, which re-derives totals from the persisted lines and
-   * deducts stock. The cart-level total/tax/discount fields on `sale` are not
-   * re-applied here to avoid double counting on top of the persisted lines.
+   * per-line qty/discount/price), then the sale is finalized. Line totals and
+   * per-item discounts are re-derived from the persisted lines, but the
+   * cart-level tax rate, discount-on-total and amount paid only exist on the
+   * cart, so they are forwarded to checkout and stored on the header.
+   *
+   * `salesType: 'Credit'` routes to checkoutCreditSale, which additionally
+   * requires `customerId` and records the outstanding balance against them.
    *
    * The current-transaction register is only cleared on success, so a failed
    * checkout (e.g. insufficient stock) leaves the transaction open for retry
@@ -295,6 +298,16 @@ export const transactionApi = {
 
     const items = (sale && sale.items) || [];
 
+    // Drop lines the cashier removed since this transaction was opened, so a
+    // retry after a failed checkout never resurrects them.
+    const keepIds = new Set(items.map((item) => String(item.id)));
+    const persisted = await SalesService.getTransactionWithDetails(transactionId);
+    for (const line of (persisted && persisted.items) || []) {
+      if (!keepIds.has(String(line.product_id))) {
+        await SalesService.removeFromCart(transactionId, line.product_id);
+      }
+    }
+
     for (const item of items) {
       await SalesService.updateCart(transactionId, {
         productId: item.id,
@@ -303,7 +316,16 @@ export const transactionApi = {
       });
     }
 
-    const result = await SalesService.checkoutCounterSale(transactionId, {});
+    const saleData = {
+      tax: sale && sale.tax !== undefined ? String(sale.tax) : '0',
+      discountOnTotal: (sale && sale.discountOnTotal) || 0,
+      amountPaid: sale ? sale.amountPaid : undefined,
+      customerId: sale && sale.customerId
+    };
+
+    const result = sale && sale.salesType === 'Credit'
+      ? await SalesService.checkoutCreditSale(transactionId, saleData)
+      : await SalesService.checkoutCounterSale(transactionId, saleData);
 
     currentTransactionId = null;
 

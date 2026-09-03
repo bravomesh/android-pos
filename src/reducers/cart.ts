@@ -69,10 +69,13 @@ const buildLine = (item: CartItemInput): CartLine => {
   };
 };
 
+// Tax is charged on top of the discounted total, matching what the sale is
+// recorded as in SQLite (SalesService.checkoutCounterSale):
+//   netTotal = (total - discountOnTotal) + taxAmount
 const recomputeTaxAndNet = (summary: CartSummary) => {
   const taxableBase = currency(summary.total).subtract(summary.discountOnTotal);
   summary.taxAmount = taxableBase.multiply(Number(summary.tax) * 0.01).value;
-  summary.netTotal = taxableBase.subtract(summary.taxAmount).value;
+  summary.netTotal = taxableBase.add(summary.taxAmount).value;
 };
 
 const cartSlice = createSlice({

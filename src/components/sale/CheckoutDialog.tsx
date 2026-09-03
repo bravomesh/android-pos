@@ -54,9 +54,12 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
       const sale = {
         items: cartArray,
         total: currency(summary.total).value,
+        tax: summary.tax,
         taxAmount: currency(summary.taxAmount).value,
+        discountOnTotal: currency(summary.discountOnTotal).value,
         totalDiscount: currency(summary.discountOnItems).add(summary.discountOnTotal).value,
         netTotal: currency(netTotal).value,
+        amountPaid: currency(amountPaid || 0).value,
       };
 
       await api.transaction.saveNormalSale(sale);
