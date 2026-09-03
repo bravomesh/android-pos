@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -35,11 +35,25 @@
         </provider>
     </application>
 
-    <!-- Permissions -->
+    <!--
+        Permissions
 
+        The app writes its daily export to its own folder on shared storage
+        (Directory.External), which needs no runtime permission on any Android
+        version. MANAGE_EXTERNAL_STORAGE ("All files access") was removed: it
+        is restricted on Google Play, has to be granted by hand through a
+        settings screen that every vendor puts somewhere different, and is not
+        needed for app-scoped storage.
+
+        WRITE_EXTERNAL_STORAGE is kept only for Android 9 and below, where the
+        optional convenience copy in the shared Documents folder still needs
+        it. Nothing fails without it.
+    -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+        android:maxSdkVersion="28" />
+
+    <!-- The register runs on tablets and phones alike; no hardware is required. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

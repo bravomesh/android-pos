@@ -490,17 +490,62 @@ class DatabaseService {
   }
 
   /**
-   * Return the on-device path of the SQLite file for the current platform.
-   * Used by the backup feature to copy the raw DB file.
+   * Every table the app owns, in an order that can be restored top-down
+   * without tripping a foreign key.
    */
-  getDatabaseFilePath() {
-    if (this.platform === 'android') {
-      return `/data/data/com.pos.mobilepos/databases/${this.dbName}SQLite.db`;
+  static get TABLES() {
+    return [
+      'users',
+      'product_types',
+      'products',
+      'stock',
+      'customers',
+      'vendors',
+      'transaction_id',
+      'transaction_headers',
+      'transaction_details',
+      'credit_transactions',
+      'credit_transactions_pointer',
+      'expense_types',
+      'expenses',
+      'receivings',
+      'stock_adjustments',
+      'daily_exports'
+    ];
+  }
+
+  /**
+   * Dump the whole database as JSON.
+   *
+   * The backup used to copy the SQLite file straight off the filesystem,
+   * using a path with the package name baked into it — which only held for
+   * one build of one app, could catch the file mid-write, and needed
+   * storage permissions to read. Reading the tables through the normal
+   * connection works on every platform the app runs on, including the web
+   * build, and is a format that can be inspected without SQLite to hand.
+   */
+  async exportAllTables() {
+    const tables = {};
+
+    for (const table of DatabaseService.TABLES) {
+      try {
+        tables[table] = await this.query(`SELECT * FROM ${table}`);
+      } catch (error) {
+        // A table added in a later version simply has nothing to export
+        // from an older database.
+        console.warn(`[backup] skipping ${table}:`, error?.message);
+        tables[table] = [];
+      }
     }
-    if (this.platform === 'ios') {
-      return `Library/CapacitorDatabase/${this.dbName}SQLite.db`;
-    }
-    return null;
+
+    return {
+      format: 'mobile-pos-backup',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      database: this.dbName,
+      platform: this.platform,
+      tables
+    };
   }
 }
 
