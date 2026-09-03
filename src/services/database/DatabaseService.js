@@ -7,6 +7,7 @@
 
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Capacitor } from '@capacitor/core';
+import { hashPassword } from './passwords';
 
 class DatabaseService {
   constructor() {
@@ -345,11 +346,12 @@ class DatabaseService {
     const adminCheck = await this.db.query("SELECT * FROM users WHERE name = 'admin'");
 
     if (adminCheck.values.length === 0) {
-      // Insert default admin user (password: admin, hashed with bcrypt)
-      // Note: In production, use proper password hashing
+      // First run: admin / admin, hashed the same way as any other password.
+      // The shop is told to change it before trading (see BUILDING.md); the
+      // app no longer accepts this pair once the password has been changed.
       await this.db.run(
-        "INSERT INTO users (name, password, role) VALUES (?, ?, ?)",
-        ['admin', '$2b$10$rQEY9zLNKz5Z5Q5Z5Q5Z5OeJZ5Z5Q5Z5Q5Z5Q5Z5Q5Z5Q5Z5Q5Z5', 'Admin']
+        'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
+        ['admin', await hashPassword('admin'), 'Admin']
       );
       console.log('Default admin user created');
     }

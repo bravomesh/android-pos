@@ -1,30 +1,18 @@
 /**
  * Users Service - Handles user authentication and management
- *
- * Note: For mobile offline use, we use a simplified auth without bcrypt.
- * In production, consider using a proper crypto library.
  */
 
 import db from './DatabaseService';
+import { hashPassword, verifyPassword, isUnusableHash } from './passwords';
 
 class UsersService {
   /**
-   * Simple hash function for offline use
-   * In production, use proper crypto/bcrypt
-   */
-  simpleHash(password) {
-    // Simple hash for demo - replace with proper implementation
-    let hash = 0;
-    for (let i = 0; i < password.length; i++) {
-      const char = password.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return `simple_${Math.abs(hash).toString(16)}`;
-  }
-
-  /**
-   * Authenticate user
+   * Authenticate a user against the stored password hash.
+   *
+   * There is deliberately no special case for the admin account: the previous
+   * version accepted admin/admin unconditionally, which meant changing the
+   * admin password did nothing and anyone who picked up the tablet could open
+   * the till.
    */
   async authenticate(username, password) {
     const users = await db.query(
@@ -38,28 +26,25 @@ class UsersService {
 
     const user = users[0];
 
-    // Check password
-    // For demo, accept 'admin' password for admin user
-    // In production, use proper password comparison
-    if (username === 'admin' && password === 'admin') {
-      return {
-        id: user.id,
-        name: user.name,
-        role: user.role
-      };
+    if (!(await verifyPassword(password, user.password))) {
+      return null;
     }
 
-    // Check hashed password
-    const hashedPassword = this.simpleHash(password);
-    if (user.password === hashedPassword) {
-      return {
-        id: user.id,
-        name: user.name,
-        role: user.role
-      };
-    }
+    return {
+      id: user.id,
+      name: user.name,
+      role: user.role
+    };
+  }
 
-    return null;
+  /**
+   * True when an account still carries a pre-PBKDF2 value that nothing can
+   * authenticate against, so the UI can prompt for a reset instead of
+   * repeating "wrong password".
+   */
+  async needsPasswordReset(username) {
+    const users = await db.query('SELECT password FROM users WHERE name = ?', [username]);
+    return users.length > 0 && isUnusableHash(users[0].password);
   }
 
   /**
@@ -99,8 +84,7 @@ class UsersService {
       throw new Error('Username already exists');
     }
 
-    // Hash password
-    const hashedPassword = this.simpleHash(data.password);
+    const hashedPassword = await hashPassword(data.password);
 
     const result = await db.run(
       `INSERT INTO users (name, password, role, created_at, updated_at)
@@ -146,7 +130,7 @@ class UsersService {
 
     if (data.password) {
       updates.push('password = ?');
-      params.push(this.simpleHash(data.password));
+      params.push(await hashPassword(data.password));
     }
 
     if (data.role) {
@@ -192,18 +176,13 @@ class UsersService {
 
     const user = users[0];
 
-    // Verify old password
-    // For admin, accept 'admin' as old password
-    if (user.name === 'admin' && oldPassword !== 'admin') {
-      const oldHash = this.simpleHash(oldPassword);
-      if (user.password !== oldHash) {
-        throw new Error('Current password is incorrect');
-      }
+    // The current password is always checked, including for admin.
+    if (!(await verifyPassword(oldPassword, user.password))) {
+      throw new Error('Current password is incorrect');
     }
 
-    // Update password
     const now = new Date().toISOString();
-    const newHash = this.simpleHash(newPassword);
+    const newHash = await hashPassword(newPassword);
 
     await db.run(
       'UPDATE users SET password = ?, updated_at = ? WHERE id = ?',

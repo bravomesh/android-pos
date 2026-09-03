@@ -48,8 +48,11 @@ class ReportsService {
     // Low stock count
     const lowStockResult = await db.query(
       `SELECT COUNT(*) as low_stock_count
-       FROM stock
-       WHERE qty <= 10`
+       FROM products p
+       JOIN stock s ON p.id = s.product_id
+       WHERE p.track_stock = 1
+         AND p.reorder_level IS NOT NULL
+         AND s.qty <= p.reorder_level`
     );
 
     const metrics = transactionsResult[0] || {};
@@ -208,22 +211,37 @@ class ReportsService {
     const end = endDate || today;
 
     const productSales = await db.query(
+      // The sold lines are filtered in a subquery rather than in the ON
+      // clause of a LEFT JOIN. Conditions on the right-hand table of a LEFT
+      // JOIN do not remove left-hand rows, so the previous form counted every
+      // line ever added to a cart — abandoned carts, open transactions and
+      // reversed sales included — as if it had been sold.
       `SELECT
         p.id,
         p.name,
+        p.sku,
+        p.unit,
         p.cost_price,
         p.selling_price,
-        COALESCE(SUM(td.qty), 0) as qty_sold,
-        COALESCE(SUM(td.price), 0) as revenue,
-        COALESCE(SUM(td.qty * td.cost_price), 0) as cost,
-        COALESCE(SUM(td.price) - SUM(td.qty * td.cost_price), 0) as profit,
-        s.qty as current_stock
+        COALESCE(sold.qty_sold, 0) as qty_sold,
+        COALESCE(sold.revenue, 0) as revenue,
+        COALESCE(sold.cost, 0) as cost,
+        COALESCE(sold.revenue - sold.cost, 0) as profit,
+        COALESCE(s.qty, 0) as current_stock
       FROM products p
-      LEFT JOIN transaction_details td ON p.id = td.product_id
-      LEFT JOIN transaction_headers th ON td.transaction_id = th.id
-        AND DATE(th.created_at) BETWEEN ? AND ?
-        AND th.transaction_status = 'Done'
-        AND th.is_active = 1
+      LEFT JOIN (
+        SELECT
+          td.product_id,
+          SUM(td.qty) as qty_sold,
+          SUM(td.price) as revenue,
+          SUM(td.qty * td.cost_price) as cost
+        FROM transaction_details td
+        JOIN transaction_headers th ON td.transaction_id = th.id
+        WHERE DATE(th.created_at) BETWEEN ? AND ?
+          AND th.transaction_status = 'Done'
+          AND th.is_active = 1
+        GROUP BY td.product_id
+      ) sold ON sold.product_id = p.id
       LEFT JOIN stock s ON p.id = s.product_id
       GROUP BY p.id
       ORDER BY qty_sold DESC`,
@@ -239,21 +257,24 @@ class ReportsService {
   /**
    * Get low stock items
    */
-  async getLowStockItems(threshold = 10) {
+  async getLowStockItems(threshold = null) {
     const items = await db.query(
       `SELECT
         p.id,
         p.name,
+        p.sku,
+        p.unit,
         p.selling_price,
         p.cost_price,
+        COALESCE(p.reorder_level, ?) as reorder_level,
         s.qty as stock_qty,
         pt.description as category
       FROM products p
       JOIN stock s ON p.id = s.product_id
       LEFT JOIN product_types pt ON p.product_type_id = pt.id
-      WHERE s.qty <= ?
+      WHERE p.track_stock = 1 AND s.qty <= COALESCE(p.reorder_level, ?)
       ORDER BY s.qty ASC`,
-      [threshold]
+      [threshold, threshold]
     );
 
     return {
