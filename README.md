@@ -4,12 +4,28 @@ A fully offline-capable Point of Sale application for Android tablets, built wit
 
 ## Features
 
-- **Fully Offline**: All data stored locally in SQLite database
-- **Complete POS Functionality**: Products, Sales, Inventory, Customers, Expenses
-- **Stock Management**: Automatic stock tracking with sales deduction and returns
-- **Credit Sales**: Track customer credit and outstanding balances
-- **Reports**: Dashboard, Profit/Loss, Sales by Product, Low Stock Alerts
-- **Responsive UI**: Optimized for tablet screens
+- **Fully offline** — all data lives in a SQLite database on the device; the
+  app never contacts a server
+- **Register** — product grid, search, barcode/SKU scanning straight into the
+  cart, per-item and whole-basket discounts, tax
+- **Stock for any kind of shop** — SKU and barcode per product, units (pieces,
+  kilograms, litres, ...), a reorder level per product, and items that are
+  billed but not stocked, such as alterations or a delivery fee
+- **Stock movements are accounted for** — damage, spoilage, theft, shop use and
+  physical stock takes are recorded with a reason, not edited away
+- **Credit sales** — put a sale on a customer's account, take part payment,
+  track what is outstanding
+- **Reports** — dashboard, profit and loss, sales by product, sales trend,
+  stock valuation, low stock
+- **Daily backup** — a PDF sales report and a full JSON data export, written
+  automatically for each trading day
+- **Runs on any Android 6+ device**, phone or tablet, with no special
+  permissions
+
+## Building the APK
+
+See **[BUILDING.md](BUILDING.md)** for the full build, signing, install and
+first-run checklist.
 
 ## Architecture
 
@@ -150,11 +166,18 @@ The app uses SQLite with the following tables:
 | expenses | Expense records |
 | expense_types | Expense categories |
 | receivings | Inventory purchases |
+| stock_adjustments | Damage, spoilage, theft, shop use and stock takes |
+| daily_exports | Which days have been backed up |
 
-## Default Login
+## Default login
 
 - **Username**: `admin`
 - **Password**: `admin`
+
+Change it from the **Users** screen before the shop opens. The app shows a
+warning banner until you do, and there is no override once it is changed —
+if the new password is lost, the only way back in is to reinstall, which
+erases the data.
 
 ## Configuration
 
@@ -192,12 +215,14 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 2. Ensure minimum SDK version is 22+
 3. Check that all Capacitor plugins are properly installed
 
-## Future Enhancements
+## Not built yet
 
-- [ ] Cloud sync when online
-- [ ] Receipt printing via Bluetooth
-- [ ] Barcode scanner integration
-- [ ] Data backup/restore
+- Cloud sync between devices
+- Receipt printing over Bluetooth
+- Camera-based barcode scanning (a USB or Bluetooth scanner works today —
+  it types the code into the search box)
+- Restoring from a backup file inside the app (the JSON export holds
+  everything, but reloading it is a manual job)
 - [ ] Multi-user support with PIN login
 
 ## License
