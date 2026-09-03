@@ -40,3 +40,7 @@ docs/
 .claude/
 IMPLEMENTATION_SUMMARY.md
 architecture.md
+
+# Android scaffolding tests
+android/app/src/test/
+android/app/src/androidTest/
