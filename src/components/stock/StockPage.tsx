@@ -15,6 +15,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import api from "../../api";
 import { toast } from "../../toast/useToast";
 import AdjustStockDialog from "./AdjustStockDialog";
+import { stockLabel } from "../sale/productLook";
 import StatCard from "../dashboard/StatCard";
 import { stagger } from "../../theme/motion";
 import { useTheme } from "@mui/material/styles";
@@ -23,7 +24,7 @@ import SellIcon from "@mui/icons-material/SellRounded";
 import WarningAmberIcon from "@mui/icons-material/WarningAmberRounded";
 import NorthIcon from "@mui/icons-material/NorthRounded";
 import SouthIcon from "@mui/icons-material/SouthRounded";
-import { money } from "../../money";
+import { money, moneyShort } from "../../money";
 
 interface StockRow {
   id: number;
@@ -113,8 +114,8 @@ export default function StockPage() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" } }}>
-        <StatCard index={0} label="Value at cost" value={totals.cost} format={money} icon={<SavingsIcon />} color={theme.palette.primary.main} hint={`${totals.units} units on hand`} />
-        <StatCard index={1} label="Value at retail" value={totals.retail} format={money} icon={<SellIcon />} color={theme.palette.secondary.main} hint={`${money(totals.retail - totals.cost)} margin`} />
+        <StatCard index={0} label="Value at cost" value={totals.cost} format={moneyShort} icon={<SavingsIcon />} color={theme.palette.primary.main} hint={`${totals.units} units on hand`} />
+        <StatCard index={1} label="Value at retail" value={totals.retail} format={moneyShort} icon={<SellIcon />} color={theme.palette.secondary.main} hint={`${moneyShort(totals.retail - totals.cost)} margin`} />
         <StatCard
           index={2}
           label="Needs reordering"
@@ -172,7 +173,7 @@ export default function StockPage() {
                         <Chip
                           size="small"
                           color={low ? "warning" : "default"}
-                          label={`${row.stock_qty} ${row.unit}`}
+                          label={stockLabel(row.stock_qty, row.unit)}
                         />
                       </TableCell>
                       <TableCell align="right">{row.reorder_level ?? "—"}</TableCell>

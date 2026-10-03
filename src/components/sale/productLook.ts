@@ -29,3 +29,12 @@ export const initials = (name: string) => {
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
 };
+
+// Units that read as countable things take a plural ("3 packs"); measures do not ("3 kg").
+const PLURAL: Record<string, string> = { pack: "packs", box: "boxes" };
+
+/** "17", "3 kg", "10 packs" — how much of something is on the shelf. */
+export const stockLabel = (qty: number, unit?: string | null) => {
+  if (!unit || unit === "pcs") return `${qty}`;
+  return `${qty} ${qty === 1 ? unit : PLURAL[unit] ?? unit}`;
+};

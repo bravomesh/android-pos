@@ -24,14 +24,20 @@ export const buildTheme = (mode: ThemeMode): Theme => {
       divider: c.border,
     },
     shape: { borderRadius: tokens.radius },
+    // Fluid sizes: each heading scales smoothly between a phone and a large
+    // tablet instead of jumping at breakpoints, so screens keep the same
+    // proportions at every width.
     typography: {
       fontFamily: tokens.font.body,
-      h3: { ...display, fontWeight: 700 },
-      h4: { ...display, fontWeight: 700, letterSpacing: "-0.01em" },
-      h5: { ...display, fontWeight: 700, letterSpacing: "-0.01em" },
-      h6: { ...display, fontWeight: 600 },
-      subtitle1: { fontWeight: 700 },
-      subtitle2: { fontWeight: 700 },
+      h3: { ...display, fontWeight: 700, fontSize: "clamp(1.9rem, 1.35rem + 2.2vw, 2.9rem)", lineHeight: 1.1 },
+      h4: { ...display, fontWeight: 700, letterSpacing: "-0.01em", fontSize: "clamp(1.55rem, 1.25rem + 1.2vw, 2.15rem)", lineHeight: 1.15 },
+      h5: { ...display, fontWeight: 700, letterSpacing: "-0.01em", fontSize: "clamp(1.2rem, 1.06rem + 0.6vw, 1.55rem)", lineHeight: 1.2 },
+      h6: { ...display, fontWeight: 600, fontSize: "clamp(1.02rem, 0.97rem + 0.25vw, 1.18rem)", lineHeight: 1.3 },
+      subtitle1: { fontWeight: 700, fontSize: "clamp(0.95rem, 0.92rem + 0.15vw, 1.02rem)" },
+      subtitle2: { fontWeight: 700, fontSize: "clamp(0.86rem, 0.84rem + 0.1vw, 0.92rem)" },
+      body1: { fontSize: "clamp(0.95rem, 0.93rem + 0.1vw, 1rem)" },
+      body2: { fontSize: "clamp(0.85rem, 0.83rem + 0.1vw, 0.9rem)" },
+      caption: { fontSize: "clamp(0.75rem, 0.74rem + 0.05vw, 0.8rem)" },
       button: { ...display, textTransform: "none", fontWeight: 600, letterSpacing: 0 },
       overline: { fontWeight: 700, letterSpacing: "0.08em" },
     },
@@ -83,6 +89,15 @@ export const buildTheme = (mode: ThemeMode): Theme => {
             borderRadius: tokens.radius + 4,
             border: `1px solid ${c.border}`,
             boxShadow: `${shadow(1, 2, lift[0])}, ${shadow(8, 24, lift[1])}`,
+            transition: `transform ${duration.quick}ms ${easing.standard}, box-shadow ${duration.quick}ms`,
+            // Cards that can be tapped rise a little under a mouse, so it is
+            // clear what is pressable. Touch screens skip it.
+            "@media (hover: hover)": {
+              "&:has(> .MuiCardActionArea-root):hover": {
+                transform: "translateY(-2px)",
+                boxShadow: `${shadow(2, 4, lift[0])}, ${shadow(14, 32, lift[1] * 1.6)}`,
+              },
+            },
           },
         },
       },

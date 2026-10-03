@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import Paper from "@mui/material/Paper";
@@ -150,6 +150,21 @@ export default function CartSheet({ open, onClose, variant, onCharge }: CartShee
   const count = summary.noOfInividualItems;
   const hasAdjustments = discount > 0 || Number(summary.tax) > 0;
 
+  // The total gives a small bump whenever it changes, so the cashier notices.
+  const totalRef = useRef<HTMLSpanElement>(null);
+  const firstTotal = useRef(true);
+  useEffect(() => {
+    if (firstTotal.current) {
+      firstTotal.current = false;
+      return;
+    }
+    const el = totalRef.current;
+    if (!el) return;
+    el.classList.remove("pos-bump");
+    void el.offsetWidth;
+    el.classList.add("pos-bump");
+  }, [net]);
+
   const content = (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1.25, px: 2, pt: 2, pb: 1.5 }}>
@@ -276,7 +291,7 @@ export default function CartSheet({ open, onClose, variant, onCharge }: CartShee
           <Typography variant="subtitle1" color="text.secondary">
             Total
           </Typography>
-          <Typography variant="h4" data-testid="cart-net-total" aria-live="polite">
+          <Typography variant="h4" data-testid="cart-net-total" aria-live="polite" ref={totalRef} sx={{ display: "inline-block", transformOrigin: "right center" }}>
             <AnimatedNumber value={net} format={money} />
           </Typography>
         </Box>

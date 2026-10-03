@@ -30,8 +30,17 @@ export default function TopProductsChart({ products }: TopProductsChartProps) {
     <ResponsiveContainer width="100%" height={Math.max(160, top.length * 42)}>
       <BarChart data={top} layout="vertical" margin={{ left: 0, right: 36, top: 4, bottom: 4 }} barCategoryGap={8}>
         <XAxis type="number" hide />
-        <YAxis type="category" dataKey="name" width={110} tick={axisTick(theme)} axisLine={false} tickLine={false} />
-        <Tooltip {...tooltipProps(theme)} cursor={{ fill: theme.palette.action.hover }} />
+        <YAxis
+          type="category"
+          dataKey="name"
+          width={132}
+          tick={axisTick(theme)}
+          // Long product names would wrap into each other on the axis.
+          tickFormatter={(name: string) => (name.length > 15 ? `${name.slice(0, 14).trimEnd()}…` : name)}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip {...tooltipProps(theme)} cursor={{ fill: theme.palette.action.hover }} labelFormatter={(name) => String(name)} />
         <Bar dataKey="qty_sold" name="Sold" fill={seriesFor(theme).sales} radius={[0, 6, 6, 0]} barSize={22} animationDuration={700}>
           <LabelList dataKey="qty_sold" position="right" style={{ fill: theme.palette.text.primary, fontWeight: 700, fontSize: 13 }} />
         </Bar>

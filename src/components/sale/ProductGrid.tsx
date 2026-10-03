@@ -11,7 +11,7 @@ import { toast } from "../../toast/useToast";
 import { money } from "../../money";
 import { stagger } from "../../theme/motion";
 import EmptyState from "../motion/EmptyState";
-import { initials, tileGradient } from "./productLook";
+import { initials, stockLabel, tileGradient } from "./productLook";
 import { flyToCart } from "./flyToCart";
 
 export interface ProductGridProps {
@@ -45,7 +45,7 @@ function StockLine({ product }: { product: SaleProduct }) {
       ? "Service"
       : out
         ? "Out of stock"
-        : `${product.stock_qty} ${product.unit && product.unit !== "pcs" ? product.unit : "left"}${low ? " · low" : ""}`;
+        : `${stockLabel(product.stock_qty, product.unit)} left${low ? " · low" : ""}`;
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
@@ -192,7 +192,7 @@ export default function ProductGrid({ products, onAdd, inCart = {}, loading }: P
                 >
                   {product.name}
                 </Typography>
-                <Typography variant="h6" sx={{ fontSize: "1.05rem", mt: 0.25 }}>
+                <Typography variant="h6" sx={{ mt: 0.25 }}>
                   {money(product.selling_price)}
                 </Typography>
                 <StockLine product={product} />

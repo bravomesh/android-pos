@@ -22,8 +22,20 @@ export interface StatCardProps {
 }
 
 export default function StatCard({ label, value, format, icon, color, hint, onClick, index = 0 }: StatCardProps) {
+  // Phones stack the icon above the figure so a long amount keeps the full
+  // width of the tile; wider screens put them side by side.
   const body = (
-    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, p: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        alignItems: { xs: "flex-start", sm: "center" },
+        gap: { xs: 1, sm: 1.5 },
+        p: { xs: 1.75, sm: 2 },
+        position: "relative",
+        height: "100%",
+      }}
+    >
       <Box
         aria-hidden
         sx={{
@@ -39,11 +51,11 @@ export default function StatCard({ label, value, format, icon, color, hint, onCl
       >
         {icon}
       </Box>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
+      <Box sx={{ minWidth: 0, flex: 1, alignSelf: "stretch" }}>
         <Typography variant="caption" color="text.secondary" component="div" noWrap sx={{ fontWeight: 700 }}>
           {label}
         </Typography>
-        <Typography variant="h5" component="div" noWrap sx={{ fontSize: { xs: "1.2rem", sm: "1.45rem" } }}>
+        <Typography variant="h5" component="div" noWrap>
           <AnimatedNumber value={value} format={format} />
         </Typography>
         {hint && (
@@ -52,7 +64,19 @@ export default function StatCard({ label, value, format, icon, color, hint, onCl
           </Typography>
         )}
       </Box>
-      {onClick && <ChevronRightIcon aria-hidden sx={{ color: "text.secondary", alignSelf: "center" }} />}
+      {onClick && (
+        <ChevronRightIcon
+          aria-hidden
+          sx={{
+            color: "text.secondary",
+            position: { xs: "absolute", sm: "static" },
+            top: 12,
+            right: 8,
+            transition: "transform 180ms",
+            ".MuiCardActionArea-root:hover &": { transform: "translateX(3px)" },
+          }}
+        />
+      )}
     </Box>
   );
 

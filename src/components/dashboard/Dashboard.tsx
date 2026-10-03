@@ -30,7 +30,7 @@ import SalesTrendChart from "./charts/SalesTrendChart";
 import TopProductsChart from "./charts/TopProductsChart";
 import ExpenseBreakdownChart from "./charts/ExpenseBreakdownChart";
 import AnimatedNumber from "../motion/AnimatedNumber";
-import { money } from "../../money";
+import { moneyShort } from "../../money";
 import { selectUser } from "../../reducers/auth";
 import { stagger } from "../../theme/motion";
 
@@ -46,7 +46,7 @@ function Panel({ title, action, children, index }: { title: string; action?: Rea
     <Card className="pos-enter" sx={{ height: "100%", animationDelay: stagger(index + 6, 50) }}>
       <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5, gap: 1 }}>
-          <Typography variant="h6" sx={{ fontSize: "1.05rem" }}>
+          <Typography variant="h6">
             {title}
           </Typography>
           {action}
@@ -229,11 +229,28 @@ export default function Dashboard() {
             <Typography variant="overline" sx={{ opacity: 0.75, display: "block", mt: 1.5 }}>
               Taken today
             </Typography>
-            <Typography variant="h3" sx={{ color: "#fff", fontSize: { xs: "2.2rem", sm: "2.8rem" }, lineHeight: 1.1 }}>
-              <AnimatedNumber value={todaySales} format={money} duration={900} />
+            <Typography variant="h3" sx={{ color: "#fff" }}>
+              <AnimatedNumber value={todaySales} format={moneyShort} duration={900} />
             </Typography>
           </Box>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box
+            sx={{
+              display: "grid",
+              gap: 1,
+              width: { xs: "100%", sm: "auto" },
+              gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))", sm: "repeat(3, auto)" },
+              // On a phone each action is a square-ish tile: icon over label.
+              "& .MuiButton-root": {
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 0.5, sm: 0 },
+                minHeight: { xs: 68, sm: 48 },
+                px: { xs: 1, sm: 2 },
+                fontSize: { xs: "0.8rem", sm: "0.875rem" },
+                lineHeight: 1.2,
+              },
+              "& .MuiButton-startIcon": { m: { xs: 0, sm: "0 8px 0 -4px" } },
+            }}
+          >
             <Button
               variant="contained"
               color="secondary"
@@ -283,12 +300,12 @@ export default function Dashboard() {
       {loading && <LinearProgress />}
 
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" } }}>
-        <StatCard index={0} label="Sales" value={sales} format={money} icon={<PaidIcon />} color={theme.palette.primary.main} hint={`${metrics?.itemsSold ?? 0} items sold`} />
+        <StatCard index={0} label="Sales" value={sales} format={moneyShort} icon={<PaidIcon />} color={theme.palette.primary.main} hint={`${metrics?.itemsSold ?? 0} items sold`} />
         <StatCard
           index={1}
           label="Profit after expenses"
           value={netProfit}
-          format={money}
+          format={moneyShort}
           icon={<TrendingUpIcon />}
           color={netProfit >= 0 ? theme.palette.primary.main : theme.palette.error.main}
           hint={profitLoss ? `${profitLoss.profitMargin}% of sales` : undefined}
@@ -297,8 +314,8 @@ export default function Dashboard() {
         <StatCard
           index={3}
           label="Average basket"
-          value={count > 0 ? sales / count : 0}
-          format={money}
+          value={count > 0 ? Math.round(sales / count) : 0}
+          format={moneyShort}
           icon={<ShoppingBagIcon />}
           color={theme.palette.info.main}
         />
@@ -306,7 +323,7 @@ export default function Dashboard() {
           index={4}
           label="Owed by customers"
           value={owed}
-          format={money}
+          format={moneyShort}
           icon={<AccountBalanceWalletIcon />}
           color={owed > 0 ? theme.palette.secondary.main : theme.palette.text.secondary}
           onClick={() => navigate("/customers")}

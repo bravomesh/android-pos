@@ -97,7 +97,7 @@ export default function LoginPage() {
         </Box>
 
         <Box sx={{ position: "relative", maxWidth: 440 }}>
-          <Typography variant="h3" sx={{ color: "#fff", fontSize: "2.6rem", lineHeight: 1.15 }} className="pos-enter">
+          <Typography variant="h3" sx={{ color: "#fff" }} className="pos-enter">
             Your shop, in one tablet.
           </Typography>
           <Box component="ul" sx={{ listStyle: "none", p: 0, m: 0, mt: 4, display: "grid", gap: 2 }}>
@@ -114,7 +114,7 @@ export default function LoginPage() {
                 >
                   {item.icon}
                 </Box>
-                <Typography sx={{ fontWeight: 600, fontSize: "1.05rem" }}>{item.text}</Typography>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>{item.text}</Typography>
               </Box>
             ))}
           </Box>

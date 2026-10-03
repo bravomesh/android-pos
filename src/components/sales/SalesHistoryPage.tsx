@@ -21,7 +21,7 @@ import ConfirmDialog from "../crud/ConfirmDialog";
 import EmptyState from "../motion/EmptyState";
 import AnimatedNumber from "../motion/AnimatedNumber";
 import { toast } from "../../toast/useToast";
-import { money } from "../../money";
+import { money, moneyShort } from "../../money";
 import { localDay, localDayBefore } from "../../services/database/businessDay";
 import { selectIsAdmin } from "../../reducers/auth";
 import { duration, easing, stagger } from "../../theme/motion";
@@ -67,7 +67,7 @@ function Summary({ label, value, format, color }: { label: string; value: number
       <Typography variant="caption" color="text.secondary" component="div" sx={{ fontWeight: 700, position: "relative" }} noWrap>
         {label}
       </Typography>
-      <Typography variant="h5" sx={{ position: "relative", fontSize: { xs: "1.1rem", sm: "1.5rem" } }} noWrap>
+      <Typography variant="h6" sx={{ position: "relative" }} noWrap>
         <AnimatedNumber value={value} format={format} />
       </Typography>
     </Card>
@@ -134,15 +134,15 @@ export default function SalesHistoryPage() {
   const takings = done.reduce((sum, s) => sum + (s.net_amount || 0), 0);
   const onAccount = done.filter((s) => s.sales_type === "Credit").reduce((sum, s) => sum + (s.net_amount - s.amount_paid), 0);
   const isToday = day === localDay();
-  const navButton = { width: 48, height: 48, bgcolor: "background.paper", border: `1px solid ${theme.palette.divider}` };
+  const navButton = { width: 48, height: 48, flexShrink: 0, bgcolor: "background.paper", border: `1px solid ${theme.palette.divider}` };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <IconButton aria-label="Previous day" onClick={() => setDay((d) => shiftDay(d, -1))} sx={navButton}>
           <ChevronLeftIcon />
         </IconButton>
-        <Box key={day} className="pos-enter" sx={{ flex: 1, minWidth: 120 }}>
+        <Box key={day} className="pos-enter" sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h5" component="h2" noWrap>
             {dayLabel(day)}
           </Typography>
@@ -154,10 +154,10 @@ export default function SalesHistoryPage() {
           value={day}
           onChange={(e) => e.target.value && setDay(e.target.value)}
           slotProps={{ inputLabel: { shrink: true } }}
-          sx={{ width: 170 }}
+          sx={{ width: 170, display: { xs: "none", sm: "inline-flex" } }}
         />
         {!isToday && (
-          <Button variant="outlined" onClick={() => setDay(localDay())} sx={{ minHeight: 48 }}>
+          <Button variant="outlined" onClick={() => setDay(localDay())} sx={{ minHeight: 48, flexShrink: 0 }}>
             Today
           </Button>
         )}
@@ -169,10 +169,13 @@ export default function SalesHistoryPage() {
       <Typography data-testid="sales-summary" className="sr-only">
         {done.length} sale{done.length === 1 ? "" : "s"} · {money(takings)}
       </Typography>
-      <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+      {/* Takings matter most: full width on a phone, first of three on wider screens. */}
+      <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))" } }}>
+        <Box sx={{ gridColumn: { xs: "1 / -1", sm: "auto" } }}>
+          <Summary label="Takings" value={takings} format={moneyShort} color={theme.palette.primary.main} />
+        </Box>
         <Summary label="Sales" value={done.length} color={theme.palette.secondary.main} />
-        <Summary label="Takings" value={takings} format={money} color={theme.palette.primary.main} />
-        <Summary label="Put on account" value={onAccount} format={money} color={theme.palette.warning.main} />
+        <Summary label="On account" value={onAccount} format={moneyShort} color={theme.palette.warning.main} />
       </Box>
 
       {loading ? (

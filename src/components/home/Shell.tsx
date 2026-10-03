@@ -277,7 +277,8 @@ export default function Shell({ children }: ShellProps) {
       >
         <Toolbar sx={{ mb: 2, mt: "env(safe-area-inset-top)" }} />
         {/* Remounts on every screen change, so each screen rises into place. */}
-        <Box key={location.pathname} className="pos-enter">
+        {/* Capped so cards and tables keep their proportions on wide screens. */}
+        <Box key={location.pathname} className="pos-enter" sx={{ maxWidth: 1440, mx: "auto" }}>
           {children}
         </Box>
       </Box>
