@@ -18,7 +18,7 @@ export interface NavItem {
   path: string;
   icon: ReactElement;
   section: NavSection;
-  /** Cashiers work the till; the back office is for administrators. */
+  /** Shopkeepers work the till; the back office is for the owner. */
   adminOnly?: boolean;
 }
 

@@ -15,7 +15,8 @@ export interface ListPageProps<Row extends { id: number | string }> {
   searchRows?: (q: string) => Promise<Row[]>; // optional search
   onAdd: () => void;                         // navigate to /<entity>/new
   onEdit: (row: Row) => void;
-  onDelete: (row: Row) => Promise<void>;     // page calls api delete; ListPage reloads + toasts
+  /** Leave out to hide delete, e.g. for a role that may not remove records. */
+  onDelete?: (row: Row) => Promise<void>;    // page calls api delete; ListPage reloads + toasts
   addLabel?: string;                         // default "Add new"
   /** Column whose text becomes the coloured initials tile beside each row. */
   avatarKey?: string;

@@ -110,7 +110,7 @@ export default function ListPage<Row extends { id: number | string }>({
   };
 
   const handleDeleteConfirm = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || !onDelete) return;
     const target = deleteTarget;
     setDeleteTarget(null);
     try {
@@ -149,11 +149,13 @@ export default function ListPage<Row extends { id: number | string }>({
           <EditIcon fontSize="small" />
         </IconButton>
       </Tooltip>
-      <Tooltip title="Delete">
-        <IconButton aria-label="delete" onClick={askDelete(row)} sx={{ width: 44, height: 44, "&:hover": { color: "error.main" } }}>
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      {onDelete && (
+        <Tooltip title="Delete">
+          <IconButton aria-label="delete" onClick={askDelete(row)} sx={{ width: 44, height: 44, "&:hover": { color: "error.main" } }}>
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
     </Box>
   );
 

@@ -9,8 +9,8 @@ A fully offline-capable Point of Sale application for Android tablets, built wit
 - **Register** — product grid, search, barcode/SKU scanning straight into the
   cart, per-item and whole-basket discounts, tax, and quantities typed in for
   goods sold by weight or length (1.5 kg)
-- **Sales history** — every sale by day, with its lines, customer and cashier;
-  an administrator can reverse a sale (a return or a mistake), which puts the
+- **Sales history** — every sale by day, with its lines, customer and who
+  rang it up; the owner can reverse a sale (a return or a mistake), which puts the
   goods back and takes any debt off the customer's account
 - **Stock for any kind of shop** — SKU and barcode per product, units (pieces,
   kilograms, litres, ...), a reorder level per product, and items that are
@@ -24,9 +24,10 @@ A fully offline-capable Point of Sale application for Android tablets, built wit
 - **Daily backup and restore** — a PDF sales report and a full JSON data
   export, written automatically for each trading day; the JSON file restores
   the whole shop onto a new tablet
-- **Cashiers and administrators** — cashiers get the register, sales history
-  and customers; the back office, reversals and user accounts are for
-  administrators. Each sale records who rang it up
+- **Owner and shopkeeper roles** — shopkeepers get the register, sales
+  history and customers; the owner gets everything, including the
+  dashboard, stock, restocking, expenses, backups and user accounts. Each
+  sale records who rang it up
 - **Runs on any Android 6+ device**, phone or tablet, with no special
   permissions
 
@@ -215,7 +216,7 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 - Receipt printing over Bluetooth
 - Camera-based barcode scanning (a USB or Bluetooth scanner works today —
   it types the code into the search box)
-- PIN login for cashiers
+- PIN login for shopkeepers
 
 ## License
 

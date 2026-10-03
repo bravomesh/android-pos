@@ -32,5 +32,8 @@ export interface SignedInUser {
 export const selectUser = (state: { auth?: AuthState }) =>
   (state.auth?.tokens?.user as SignedInUser | undefined) ?? null;
 
+/** What each stored role is called on screen. */
+export const roleLabel = (role?: string) => (role === "Admin" ? "Owner" : "Shopkeeper");
+
 export const selectIsAdmin = (state: { auth?: AuthState }) => selectUser(state)?.role === "Admin";
 export default authSlice.reducer;

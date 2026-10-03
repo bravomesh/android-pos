@@ -9,7 +9,7 @@ import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import { useSelector } from "react-redux";
-import { selectUser } from "../../reducers/auth";
+import { roleLabel, selectUser } from "../../reducers/auth";
 
 interface UserRow {
   id: number;
@@ -19,7 +19,7 @@ interface UserRow {
 
 const columns: ColumnDef<UserRow>[] = [
   { key: "name", label: "Username", primary: true },
-  { key: "role", label: "Role", secondary: true },
+  { key: "role", label: "Role", secondary: true, render: (row) => roleLabel(row.role) },
 ];
 
 export default function UsersPage() {

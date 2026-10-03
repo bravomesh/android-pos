@@ -19,12 +19,14 @@ import MenuIcon from "@mui/icons-material/MenuRounded";
 import DarkModeIcon from "@mui/icons-material/DarkModeRounded";
 import LightModeIcon from "@mui/icons-material/LightModeRounded";
 import LogoutIcon from "@mui/icons-material/LogoutRounded";
+import KeyIcon from "@mui/icons-material/KeyRounded";
 import StorefrontIcon from "@mui/icons-material/StorefrontRounded";
 import { useThemeMode } from "../../theme/ThemeModeContext";
 import { duration, easing } from "../../theme/motion";
 import { logout } from "../../actions/auth";
 import { navItemsFor, NavItem, NavSection } from "./navItems";
-import { selectIsAdmin, selectUser } from "../../reducers/auth";
+import ChangePasswordDialog from "../users/ChangePasswordDialog";
+import { roleLabel, selectIsAdmin, selectUser } from "../../reducers/auth";
 
 const DRAWER_WIDTH = 264;
 
@@ -74,6 +76,7 @@ export default function Shell({ children }: ShellProps) {
   const items = navItemsFor(useSelector(selectIsAdmin));
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const activeItem = items.find((item) => isActivePath(location.pathname, item.path));
   const subPage = Object.entries(SUB_PAGES).find(([path]) => isActivePath(location.pathname, path))?.[1];
@@ -185,9 +188,15 @@ export default function Shell({ children }: ShellProps) {
             {user?.name ?? "Signed out"}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {user?.role === "Admin" ? "Administrator" : "Cashier"}
+            {roleLabel(user?.role)}
           </Typography>
         </Box>
+        {/* Everyone changes their own password here; the Users screen is the owner's. */}
+        <Tooltip title="Change my password">
+          <IconButton aria-label="Change my password" onClick={() => setChangingPassword(true)} sx={{ width: 44, height: 44 }}>
+            <KeyIcon />
+          </IconButton>
+        </Tooltip>
         <Tooltip title="Log out">
           <IconButton aria-label="Log out" onClick={() => dispatch(logout())} sx={{ width: 44, height: 44 }}>
             <LogoutIcon />
@@ -248,6 +257,12 @@ export default function Shell({ children }: ShellProps) {
         >
           {drawerContent}
         </Drawer>
+        <ChangePasswordDialog
+          user={changingPassword && user ? { id: user.id, name: user.name } : null}
+          isSelf
+          onClose={() => setChangingPassword(false)}
+          onSaved={() => setChangingPassword(false)}
+        />
       </Box>
 
       <Box

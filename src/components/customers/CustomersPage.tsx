@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { selectIsAdmin } from "../../reducers/auth";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import PeopleIcon from "@mui/icons-material/PeopleAltRounded";
@@ -21,6 +23,7 @@ interface CustomerRow {
 
 export default function CustomersPage() {
   const navigate = useNavigate();
+  const isOwner = useSelector(selectIsAdmin);
   const [paying, setPaying] = useState<CustomerRow | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -67,9 +70,14 @@ export default function CustomersPage() {
         searchRows={async (q: string) => (await api.customer.searchByIdAndGetByPages(q)).data}
         onAdd={() => navigate("/customers/new")}
         onEdit={(row) => navigate(`/customers/edit/${row.id}`)}
-        onDelete={async (row) => {
-          await api.customer.delete(row.id);
-        }}
+        // Removing a customer is the owner's call; shopkeepers add and edit them.
+        onDelete={
+          isOwner
+            ? async (row) => {
+                await api.customer.delete(row.id);
+              }
+            : undefined
+        }
       />
       <TakePaymentDialog
         customer={paying}

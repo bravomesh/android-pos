@@ -83,10 +83,13 @@ normal sideloading prompt, and is the only prompt the app needs.
 2. Go to **Users**, tap the admin account, and set a real password. The app
    shows a warning banner until you do. There is no way in and no back door
    once the password is changed, so write it down somewhere safe.
-3. Add a cashier account for each person who works the till. Cashiers see
-   the register, the sales history and customers; everything else, and
-   reversing a sale, is for administrators. If a cashier forgets their
-   password, an administrator sets a new one from **Users**.
+3. Add a **Shopkeeper** account for each person who works the till.
+   Shopkeepers see the register, the sales history and customers (they can
+   add customers and take payments, but not delete them). Everything else —
+   the dashboard, products, stock, receivings, expenses, backups, users,
+   and reversing a sale — is for the **Owner**. Anyone can change their own
+   password from the key button beside their name in the menu; if a
+   shopkeeper forgets theirs, the owner sets a new one from **Users**.
 4. Set up **Product types**, then add your products under **Products**.
 5. Check **Stock** shows what you actually have on the shelves.
 
