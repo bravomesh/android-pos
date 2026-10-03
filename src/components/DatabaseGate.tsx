@@ -10,10 +10,9 @@ import { ReactNode, useCallback, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
-import StorefrontIcon from "@mui/icons-material/Storefront";
 import DatabaseService from "../services/database/DatabaseService";
+import { BrandMark } from "./home/Shell";
 import BackupScheduler from "../services/backup/BackupScheduler";
 
 type GateState = "initializing" | "ready" | "error";
@@ -22,20 +21,25 @@ interface DatabaseGateProps {
   children: ReactNode;
 }
 
-const BrandMark = () => (
-  <Box
-    sx={{
-      width: 64,
-      height: 64,
-      borderRadius: 2,
-      bgcolor: "primary.main",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      mb: 2,
-    }}
-  >
-    <StorefrontIcon sx={{ color: "primary.contrastText", fontSize: 32 }} />
+/** The shop's mark with a soft ring pulsing out while the database opens. */
+const PulsingMark = () => (
+  <Box sx={{ position: "relative", width: 72, height: 72, mb: 3 }}>
+    {[0, 600].map((delay) => (
+      <Box
+        key={delay}
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          borderRadius: "24px",
+          bgcolor: "primary.main",
+          animation: `pos-ring 1.6s cubic-bezier(0.2, 0, 0, 1) ${delay}ms infinite`,
+        }}
+      />
+    ))}
+    <Box sx={{ position: "relative" }}>
+      <BrandMark size={72} />
+    </Box>
   </Box>
 );
 
@@ -76,9 +80,8 @@ export default function DatabaseGate({ children }: DatabaseGateProps) {
           bgcolor: "background.default",
         }}
       >
-        <BrandMark />
-        <CircularProgress size={40} sx={{ mb: 2 }} />
-        <Typography variant="h6" color="text.primary">
+        <PulsingMark />
+        <Typography variant="h6" color="text.primary" className="pos-enter">
           Preparing your store…
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -101,7 +104,9 @@ export default function DatabaseGate({ children }: DatabaseGateProps) {
         }}
       >
         <Card sx={{ width: "100%", maxWidth: 400, p: 4, textAlign: "center" }}>
-          <BrandMark />
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+            <BrandMark size={56} />
+          </Box>
           <Typography variant="h6" color="text.primary" gutterBottom>
             Initialization Error
           </Typography>
