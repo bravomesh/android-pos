@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
+import TakePaymentDialog from "./TakePaymentDialog";
 import api from "../../api";
+import { money } from "../../money";
 
 interface CustomerRow {
   id: number;
@@ -10,31 +15,57 @@ interface CustomerRow {
   address: string | null;
   mobile: string | null;
   email: string | null;
+  outstanding_balance: number;
 }
-
-const columns: ColumnDef<CustomerRow>[] = [
-  { key: "id", label: "Id" },
-  { key: "name", label: "Name", primary: true },
-  { key: "description", label: "Description" },
-  { key: "address", label: "Address" },
-  { key: "mobile", label: "Mobile", secondary: true },
-  { key: "email", label: "Email" },
-];
 
 export default function CustomersPage() {
   const navigate = useNavigate();
+  const [paying, setPaying] = useState<CustomerRow | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const columns: ColumnDef<CustomerRow>[] = [
+    { key: "name", label: "Name", primary: true },
+    { key: "mobile", label: "Mobile", secondary: true },
+    { key: "address", label: "Address" },
+    {
+      key: "outstanding_balance",
+      label: "Owes",
+      render: (row) =>
+        row.outstanding_balance > 0 ? (
+          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+            {money(row.outstanding_balance)}
+            <Button size="small" onClick={() => setPaying(row)} data-testid={`take-payment-${row.id}`}>
+              Take payment
+            </Button>
+          </Box>
+        ) : (
+          "—"
+        ),
+    },
+  ];
 
   return (
-    <ListPage<CustomerRow>
-      title="Customers"
-      columns={columns}
-      fetchRows={async () => (await api.customer.fetchAll()).data}
-      searchRows={async (q: string) => (await api.customer.searchByIdAndGetByPages(q)).data}
-      onAdd={() => navigate("/customers/new")}
-      onEdit={(row) => navigate(`/customers/edit/${row.id}`)}
-      onDelete={async (row) => {
-        await api.customer.delete(row.id);
-      }}
-    />
+    <>
+      <ListPage<CustomerRow>
+        key={reloadKey}
+        title="Customers"
+        columns={columns}
+        fetchRows={async () => (await api.customer.fetchAll()).data}
+        searchRows={async (q: string) => (await api.customer.searchByIdAndGetByPages(q)).data}
+        onAdd={() => navigate("/customers/new")}
+        onEdit={(row) => navigate(`/customers/edit/${row.id}`)}
+        onDelete={async (row) => {
+          await api.customer.delete(row.id);
+        }}
+      />
+      <TakePaymentDialog
+        customer={paying}
+        onClose={() => setPaying(null)}
+        onSaved={() => {
+          setPaying(null);
+          setReloadKey((key) => key + 1);
+        }}
+      />
+    </>
   );
 }

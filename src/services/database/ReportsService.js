@@ -463,6 +463,15 @@ class ReportsService {
       [date]
     );
 
+    // Money customers paid off their accounts that day, which is cash in
+    // the drawer that no sale of the day explains.
+    const paymentRows = await db.query(
+      `SELECT COALESCE(SUM(amount_paid), 0) AS total
+       FROM credit_transactions
+       WHERE type = 'Payment' AND ${localDayOf('created_at')} = ?`,
+      [date]
+    );
+
     const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
     const summary = summaryRows[0] || {};
     const totalRevenue = summary.total_revenue || 0;
@@ -477,7 +486,8 @@ class ReportsService {
         creditTotal: summary.credit_total || 0,
         totalRevenue,
         totalTax: summary.total_tax || 0,
-        totalDiscount: summary.total_discount || 0
+        totalDiscount: summary.total_discount || 0,
+        accountPayments: paymentRows[0]?.total || 0
       },
       transactions,
       topProducts,

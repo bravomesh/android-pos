@@ -202,6 +202,11 @@ const customersApiBase = {
   getBalance: async (id) => {
     const balance = await CustomersService.getCustomerBalance(id);
     return wrapResponse(balance);
+  },
+
+  receivePayment: async (id, amount) => {
+    const balance = await CustomersService.receivePayment(id, amount);
+    return wrapResponse(balance);
   }
 };
 

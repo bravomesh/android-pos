@@ -39,7 +39,8 @@ export function buildDailyReportPdf(date, data) {
     `Credit sales:        ${s.creditCount}    ${KES(s.creditTotal)}`,
     `Total revenue:                     ${KES(s.totalRevenue)}`,
     `Tax collected:                     ${KES(s.totalTax)}`,
-    `Discount given:                    ${KES(s.totalDiscount)}`
+    `Discount given:                    ${KES(s.totalDiscount)}`,
+    `Paid on account:                   ${KES(s.accountPayments)}`
   ];
   summaryLines.forEach((line) => {
     doc.text(line, margin, y);

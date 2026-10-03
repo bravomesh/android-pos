@@ -67,7 +67,8 @@ const product = {
 
 const customer = {
   ...buildEntity(customersApi),
-  getBalance: (id) => customersApi.getBalance(id)
+  getBalance: (id) => customersApi.getBalance(id),
+  receivePayment: (id, amount) => customersApi.receivePayment(id, amount)
 };
 
 const vendor = buildEntity(vendorsApi);
