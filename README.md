@@ -62,7 +62,8 @@ first-run checklist.
 - Node.js v14+ (v18+ recommended)
 - npm or yarn
 - Android Studio (for building APK)
-- Java JDK 11+
+- Java JDK 21 (see BUILDING.md — the JDK 25 bundled with recent Android
+  Studio cannot run this project's Gradle)
 
 ## Installation
 

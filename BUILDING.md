@@ -10,6 +10,11 @@ rather than working around it.
 
 - Node.js 18 or later
 - Android Studio (for the SDK and for signing a release build)
+- JDK 21 for Gradle. Recent Android Studio releases bundle JDK 25, which this
+  project's Gradle cannot run on ("Unsupported class file major version
+  69"). In Android Studio set **Settings → Build, Execution, Deployment →
+  Build Tools → Gradle → Gradle JDK** to a version 21 JDK (the dropdown can
+  download one); on the command line point `JAVA_HOME` at a JDK 21
 - A USB cable, or a way to copy an APK onto the device
 
 ## 1. Install dependencies
