@@ -20,6 +20,19 @@ class SalesService {
    * Initialize a new transaction and return the transaction ID
    */
   async initTransaction(userId = null) {
+    // Reuse a sale that was opened but never completed. The register opens
+    // one every time it is shown, so without this each visit to the screen
+    // left another empty transaction behind. Checkout replaces the lines
+    // with whatever is in the cart, so nothing stale is carried over.
+    const open = await db.query(
+      `SELECT id FROM transaction_headers
+       WHERE transaction_status IN ('Init', 'Pending') AND is_active = 1
+       ORDER BY id DESC LIMIT 1`
+    );
+    if (open.length > 0) {
+      return open[0].id;
+    }
+
     const transactionId = await db.getNextTransactionId();
     const now = new Date().toISOString();
 

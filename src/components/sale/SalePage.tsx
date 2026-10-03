@@ -49,6 +49,19 @@ export default function SalePage() {
 
   const handleAdd = (product: SaleProduct) => {
     const existing = cartItems[product.id];
+    const wanted = (existing?.qty ?? 0) + 1;
+
+    // Caught here rather than at checkout, so the cashier finds out while the
+    // customer is still choosing, not after the whole basket is rung up.
+    if (product.track_stock !== 0 && wanted > Number(product.stock_qty)) {
+      toast.error(
+        Number(product.stock_qty) > 0
+          ? `Only ${product.stock_qty} ${product.name} in stock`
+          : `${product.name} is out of stock`
+      );
+      return;
+    }
+
     if (existing) {
       dispatch(updateCartItem({ ...existing, qty: existing.qty + 1 }));
     } else {

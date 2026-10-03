@@ -14,9 +14,13 @@ export interface ProductGridProps {
   loading?: boolean;
 }
 
+// A service (alterations, delivery) is never counted, so it never runs out.
+const isOutOfStock = (product: SaleProduct) =>
+  product.track_stock !== 0 && (!product.stock_qty || product.stock_qty <= 0);
+
 export default function ProductGrid({ products, onAdd, loading }: ProductGridProps) {
   const handleTap = (product: SaleProduct) => {
-    if (!product.stock_qty || product.stock_qty <= 0) {
+    if (isOutOfStock(product)) {
       toast.error("Out of stock");
       return;
     }
@@ -42,7 +46,7 @@ export default function ProductGrid({ products, onAdd, loading }: ProductGridPro
   return (
     <Grid container spacing={1.5} sx={{ p: 0.5 }}>
       {products.map((product) => {
-        const outOfStock = !product.stock_qty || product.stock_qty <= 0;
+        const outOfStock = isOutOfStock(product);
         return (
           <Grid key={product.id} size={{ xs: 6, sm: 4, md: 3 }}>
             <Card sx={{ height: "100%" }}>
@@ -69,7 +73,13 @@ export default function ProductGrid({ products, onAdd, loading }: ProductGridPro
                 <Box sx={{ mt: "auto" }}>
                   <Chip
                     size="small"
-                    label={outOfStock ? "Out of stock" : `Stock: ${product.stock_qty}`}
+                    label={
+                      product.track_stock === 0
+                        ? "Service"
+                        : outOfStock
+                          ? "Out of stock"
+                          : `Stock: ${product.stock_qty}`
+                    }
                     color={outOfStock ? "error" : "default"}
                   />
                 </Box>
