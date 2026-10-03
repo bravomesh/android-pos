@@ -20,4 +20,17 @@ const authSlice = createSlice({
 });
 
 export const { userLoggedIn } = authSlice.actions;
+
+export interface SignedInUser {
+  id: number;
+  name: string;
+  role: "Admin" | "NonAdmin";
+}
+
+// api.auth.login returns { authToken, refreshToken, user }, and the whole
+// payload is what this slice stores.
+export const selectUser = (state: { auth?: AuthState }) =>
+  (state.auth?.tokens?.user as SignedInUser | undefined) ?? null;
+
+export const selectIsAdmin = (state: { auth?: AuthState }) => selectUser(state)?.role === "Admin";
 export default authSlice.reducer;

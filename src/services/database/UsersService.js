@@ -165,6 +165,24 @@ class UsersService {
   }
 
   /**
+   * Set a new password without the old one — for an administrator getting
+   * a cashier who forgot theirs back on the till.
+   */
+  async resetPassword(id, newPassword) {
+    const user = await this.getUserById(id);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    await db.run(
+      'UPDATE users SET password = ?, updated_at = ? WHERE id = ?',
+      [await hashPassword(newPassword), new Date().toISOString(), id]
+    );
+
+    return { success: true };
+  }
+
+  /**
    * Change password
    */
   async changePassword(id, oldPassword, newPassword) {

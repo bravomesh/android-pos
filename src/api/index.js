@@ -96,7 +96,8 @@ const user = {
   update: (id, data) => usersApi.update(id, data),
   delete: (id) => usersApi.delete(id),
   changePassword: (id, oldPassword, newPassword) =>
-    usersApi.changePassword(id, oldPassword, newPassword)
+    usersApi.changePassword(id, oldPassword, newPassword),
+  resetPassword: (id, newPassword) => usersApi.resetPassword(id, newPassword)
 };
 
 const reports = {

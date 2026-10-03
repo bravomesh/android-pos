@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
@@ -14,6 +15,7 @@ import ConfirmDialog from "../crud/ConfirmDialog";
 import { toast } from "../../toast/useToast";
 import { money } from "../../money";
 import { localDay } from "../../services/database/businessDay";
+import { selectIsAdmin } from "../../reducers/auth";
 
 interface SaleRow {
   id: number;
@@ -38,6 +40,9 @@ const time = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
 export default function SalesHistoryPage() {
+  // Undoing a sale puts money back in a customer's hand, so it is kept for
+  // whoever runs the shop.
+  const canReverse = useSelector(selectIsAdmin);
   const [day, setDay] = useState(localDay());
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +158,7 @@ export default function SalesHistoryPage() {
                         <Typography variant="body2">{money(line.price)}</Typography>
                       </Box>
                     ))}
-                    {!reversed && (
+                    {!reversed && canReverse && (
                       <Button
                         color="error"
                         onClick={() => setReversing(sale)}

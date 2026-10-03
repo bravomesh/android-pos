@@ -505,6 +505,11 @@ export const usersApi = {
   changePassword: async (id, oldPassword, newPassword) => {
     const result = await UsersService.changePassword(id, oldPassword, newPassword);
     return wrapResponse(result);
+  },
+
+  resetPassword: async (id, newPassword) => {
+    const result = await UsersService.resetPassword(id, newPassword);
+    return wrapResponse(result);
   }
 };
 

@@ -1,5 +1,8 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { Routes as RouterRoutes, Route, Navigate } from "react-router-dom";
+import { selectIsAdmin } from "../../reducers/auth";
+import { homePath } from "./navItems";
 import CustomersPage from "../customers/CustomersPage";
 import CustomerFormPage from "../customers/CustomerFormPage";
 import ExpensesPage from "../expense/ExpensesPage";
@@ -23,26 +26,31 @@ import StockPage from "../stock/StockPage";
 import UsersPage from "../users/UsersPage";
 import UserFormPage from "../users/UserFormPage";
 
+// The menu already hides the back office from cashiers; this stops a typed
+// or remembered address getting round it.
+const AdminOnly = ({ children }) =>
+  useSelector(selectIsAdmin) ? children : <Navigate to="/sale" replace />;
+
 const Routes = () => (
   <RouterRoutes>
-    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    <Route path="/" element={<Home />} />
 
     {/* Dashboard */}
-    <Route path="/dashboard" element={<Dashboard />} />
+    <Route path="/dashboard" element={<AdminOnly><Dashboard /></AdminOnly>} />
 
     {/* Sale */}
     <Route path="/sale" element={<SalePage />} />
     <Route path="/sales" element={<SalesHistoryPage />} />
 
     {/* Receivings */}
-    <Route path="/receivings" element={<ReceivingsPage />} />
-    <Route path="/receivings/new" element={<ReceivingFormPage />} />
-    <Route path="/receivings/edit/:id" element={<ReceivingFormPage />} />
+    <Route path="/receivings" element={<AdminOnly><ReceivingsPage /></AdminOnly>} />
+    <Route path="/receivings/new" element={<AdminOnly><ReceivingFormPage /></AdminOnly>} />
+    <Route path="/receivings/edit/:id" element={<AdminOnly><ReceivingFormPage /></AdminOnly>} />
 
     {/* Vendor */}
-    <Route path="/vendors" element={<VendorsPage />} />
-    <Route path="/vendors/new" element={<VendorFormPage />} />
-    <Route path="/vendors/edit/:id" element={<VendorFormPage />} />
+    <Route path="/vendors" element={<AdminOnly><VendorsPage /></AdminOnly>} />
+    <Route path="/vendors/new" element={<AdminOnly><VendorFormPage /></AdminOnly>} />
+    <Route path="/vendors/edit/:id" element={<AdminOnly><VendorFormPage /></AdminOnly>} />
 
     {/* Customer */}
     <Route path="/customers" element={<CustomersPage />} />
@@ -50,38 +58,42 @@ const Routes = () => (
     <Route path="/customers/edit/:id" element={<CustomerFormPage />} />
 
     {/* Expense */}
-    <Route path="/expense" element={<ExpensesPage />} />
-    <Route path="/expense/new" element={<ExpenseFormPage />} />
-    <Route path="/expense/edit/:id" element={<ExpenseFormPage />} />
+    <Route path="/expense" element={<AdminOnly><ExpensesPage /></AdminOnly>} />
+    <Route path="/expense/new" element={<AdminOnly><ExpenseFormPage /></AdminOnly>} />
+    <Route path="/expense/edit/:id" element={<AdminOnly><ExpenseFormPage /></AdminOnly>} />
 
     {/* Expense Type */}
-    <Route path="/expensetypes" element={<ExpenseTypesPage />} />
-    <Route path="/expensetypes/new" element={<ExpenseTypeFormPage />} />
-    <Route path="/expensetypes/edit/:id" element={<ExpenseTypeFormPage />} />
+    <Route path="/expensetypes" element={<AdminOnly><ExpenseTypesPage /></AdminOnly>} />
+    <Route path="/expensetypes/new" element={<AdminOnly><ExpenseTypeFormPage /></AdminOnly>} />
+    <Route path="/expensetypes/edit/:id" element={<AdminOnly><ExpenseTypeFormPage /></AdminOnly>} />
 
     {/* Product */}
-    <Route path="/products" element={<ProductsPage />} />
-    <Route path="/products/new" element={<ProductFormPage />} />
-    <Route path="/products/edit/:id" element={<ProductFormPage />} />
+    <Route path="/products" element={<AdminOnly><ProductsPage /></AdminOnly>} />
+    <Route path="/products/new" element={<AdminOnly><ProductFormPage /></AdminOnly>} />
+    <Route path="/products/edit/:id" element={<AdminOnly><ProductFormPage /></AdminOnly>} />
 
     {/* Stock */}
-    <Route path="/stock" element={<StockPage />} />
+    <Route path="/stock" element={<AdminOnly><StockPage /></AdminOnly>} />
 
     {/* Users */}
-    <Route path="/users" element={<UsersPage />} />
-    <Route path="/users/new" element={<UserFormPage />} />
+    <Route path="/users" element={<AdminOnly><UsersPage /></AdminOnly>} />
+    <Route path="/users/new" element={<AdminOnly><UserFormPage /></AdminOnly>} />
 
     {/* Product Type */}
-    <Route path="/producttypes" element={<ProductTypesPage />} />
-    <Route path="/producttypes/new" element={<ProductTypeFormPage />} />
-    <Route path="/producttypes/edit/:id" element={<ProductTypeFormPage />} />
+    <Route path="/producttypes" element={<AdminOnly><ProductTypesPage /></AdminOnly>} />
+    <Route path="/producttypes/new" element={<AdminOnly><ProductTypeFormPage /></AdminOnly>} />
+    <Route path="/producttypes/edit/:id" element={<AdminOnly><ProductTypeFormPage /></AdminOnly>} />
 
     {/* Backup Admin (hidden) */}
-    <Route path="/admin/backup" element={<BackupAdminPanel />} />
+    <Route path="/admin/backup" element={<AdminOnly><BackupAdminPanel /></AdminOnly>} />
 
     {/* Catch : Not found */}
     <Route path="*" element={<NotFound />} />
   </RouterRoutes>
 );
+
+function Home() {
+  return <Navigate to={homePath(useSelector(selectIsAdmin))} replace />;
+}
 
 export default Routes;

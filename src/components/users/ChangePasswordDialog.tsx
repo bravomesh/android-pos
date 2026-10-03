@@ -12,13 +12,18 @@ import { toast } from "../../toast/useToast";
 
 export interface ChangePasswordDialogProps {
   user: { id: number; name: string } | null;
+  /**
+   * Your own password needs the current one. An administrator setting
+   * someone else's (a cashier who forgot theirs) does not.
+   */
+  isSelf: boolean;
   onClose: () => void;
   onSaved: () => void;
 }
 
 const MIN_LENGTH = 6;
 
-export default function ChangePasswordDialog({ user, onClose, onSaved }: ChangePasswordDialogProps) {
+export default function ChangePasswordDialog({ user, isSelf, onClose, onSaved }: ChangePasswordDialogProps) {
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -44,7 +49,11 @@ export default function ChangePasswordDialog({ user, onClose, onSaved }: ChangeP
 
     setSaving(true);
     try {
-      await api.user.changePassword(user.id, current, next);
+      if (isSelf) {
+        await api.user.changePassword(user.id, current, next);
+      } else {
+        await api.user.resetPassword(user.id, next);
+      }
       toast.success("Password changed");
       onSaved();
     } catch (err) {
@@ -59,15 +68,17 @@ export default function ChangePasswordDialog({ user, onClose, onSaved }: ChangeP
       <DialogTitle>Change password for {user.name}</DialogTitle>
       <DialogContent>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <TextField
-            label="Current password"
-            type="password"
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            fullWidth
-            autoFocus
-            slotProps={{ htmlInput: { "data-testid": "current-password" } }}
-          />
+          {isSelf && (
+            <TextField
+              label="Current password"
+              type="password"
+              value={current}
+              onChange={(e) => setCurrent(e.target.value)}
+              fullWidth
+              autoFocus
+              slotProps={{ htmlInput: { "data-testid": "current-password" } }}
+            />
+          )}
           <TextField
             label="New password"
             type="password"

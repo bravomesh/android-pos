@@ -15,18 +15,25 @@ export interface NavItem {
   label: string;
   path: string;
   icon: ReactElement;
+  /** Cashiers work the till; the back office is for administrators. */
+  adminOnly?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", path: "/dashboard", icon: createElement(DashboardIcon) },
+  { label: "Dashboard", path: "/dashboard", icon: createElement(DashboardIcon), adminOnly: true },
   { label: "Sale", path: "/sale", icon: createElement(PointOfSaleIcon) },
   { label: "Sales history", path: "/sales", icon: createElement(HistoryIcon) },
-  { label: "Products", path: "/products", icon: createElement(Inventory2Icon) },
-  { label: "Stock", path: "/stock", icon: createElement(WarehouseIcon) },
+  { label: "Products", path: "/products", icon: createElement(Inventory2Icon), adminOnly: true },
+  { label: "Stock", path: "/stock", icon: createElement(WarehouseIcon), adminOnly: true },
   { label: "Customers", path: "/customers", icon: createElement(PeopleIcon) },
-  { label: "Vendors", path: "/vendors", icon: createElement(LocalShippingIcon) },
-  { label: "Receivings", path: "/receivings", icon: createElement(MoveToInboxIcon) },
-  { label: "Expenses", path: "/expense", icon: createElement(ReceiptIcon) },
-  { label: "Backup", path: "/admin/backup", icon: createElement(BackupIcon) },
-  { label: "Users", path: "/users", icon: createElement(ManageAccountsIcon) },
+  { label: "Vendors", path: "/vendors", icon: createElement(LocalShippingIcon), adminOnly: true },
+  { label: "Receivings", path: "/receivings", icon: createElement(MoveToInboxIcon), adminOnly: true },
+  { label: "Expenses", path: "/expense", icon: createElement(ReceiptIcon), adminOnly: true },
+  { label: "Backup", path: "/admin/backup", icon: createElement(BackupIcon), adminOnly: true },
+  { label: "Users", path: "/users", icon: createElement(ManageAccountsIcon), adminOnly: true },
 ];
+
+export const navItemsFor = (isAdmin: boolean) => NAV_ITEMS.filter((item) => isAdmin || !item.adminOnly);
+
+/** Where a user lands after signing in. */
+export const homePath = (isAdmin: boolean) => (isAdmin ? "/dashboard" : "/sale");

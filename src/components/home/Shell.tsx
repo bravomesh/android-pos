@@ -1,6 +1,6 @@
 import { ReactNode, useState, MouseEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Box from "@mui/material/Box";
@@ -23,7 +23,8 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useThemeMode } from "../../theme/ThemeModeContext";
 import { logout } from "../../actions/auth";
-import { NAV_ITEMS } from "./navItems";
+import { navItemsFor } from "./navItems";
+import { selectIsAdmin, selectUser } from "../../reducers/auth";
 
 const DRAWER_WIDTH = 240;
 
@@ -41,6 +42,8 @@ export default function Shell({ children }: ShellProps) {
   const location = useLocation();
   const dispatch = useDispatch();
   const { mode, toggle } = useThemeMode();
+  const user = useSelector(selectUser);
+  const NAV_ITEMS = navItemsFor(useSelector(selectIsAdmin));
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -149,6 +152,9 @@ export default function Shell({ children }: ShellProps) {
             <AccountCircleIcon />
           </IconButton>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+            <MenuItem disabled>
+              {user ? `${user.name} (${user.role === "Admin" ? "administrator" : "cashier"})` : ""}
+            </MenuItem>
             <MenuItem onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon fontSize="small" />

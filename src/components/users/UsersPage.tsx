@@ -9,7 +9,7 @@ import Button from "@mui/material/Button";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import { useSelector } from "react-redux";
-import { RootState } from "../../store";
+import { selectUser } from "../../reducers/auth";
 
 interface UserRow {
   id: number;
@@ -26,10 +26,8 @@ export default function UsersPage() {
   const navigate = useNavigate();
   // api.auth.login returns { authToken, refreshToken, user }, and the whole
   // payload is what the auth slice stores.
-  const signedInAs = useSelector(
-    (state: RootState) =>
-      (state.auth?.tokens as { user?: { name?: string } } | undefined)?.user?.name
-  );
+  const signedIn = useSelector(selectUser);
+  const signedInAs = signedIn?.name;
   const [changingPasswordFor, setChangingPasswordFor] = useState<UserRow | null>(null);
   const [defaultPasswordInUse, setDefaultPasswordInUse] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -83,6 +81,7 @@ export default function UsersPage() {
 
       <ChangePasswordDialog
         user={changingPasswordFor}
+        isSelf={changingPasswordFor?.id === signedIn?.id}
         onClose={() => setChangingPasswordFor(null)}
         onSaved={() => {
           setChangingPasswordFor(null);
