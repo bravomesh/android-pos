@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Mobile POS</string>
-    <string name="title_activity_main">Mobile POS</string>
+    <string name="app_name">Daisy\'s Baby Shop</string>
+    <string name="title_activity_main">Daisy\'s Baby Shop</string>
     <string name="package_name">com.pos.mobilepos</string>
     <string name="custom_url_scheme">com.pos.mobilepos</string>
 </resources>

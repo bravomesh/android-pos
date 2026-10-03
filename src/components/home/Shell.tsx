@@ -20,7 +20,8 @@ import DarkModeIcon from "@mui/icons-material/DarkModeRounded";
 import LightModeIcon from "@mui/icons-material/LightModeRounded";
 import LogoutIcon from "@mui/icons-material/LogoutRounded";
 import KeyIcon from "@mui/icons-material/KeyRounded";
-import StorefrontIcon from "@mui/icons-material/StorefrontRounded";
+import StrollerIcon from "@mui/icons-material/ChildFriendlyRounded";
+import { SHOP_NAME } from "../../shop";
 import { useThemeMode } from "../../theme/ThemeModeContext";
 import { duration, easing } from "../../theme/motion";
 import { logout } from "../../actions/auth";
@@ -57,7 +58,7 @@ export const BrandMark = ({ size = 40 }: { size?: number }) => (
       boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.35)}`,
     })}
   >
-    <StorefrontIcon sx={{ fontSize: size * 0.55 }} />
+    <StrollerIcon sx={{ fontSize: size * 0.55 }} />
   </Box>
 );
 
@@ -80,7 +81,7 @@ export default function Shell({ children }: ShellProps) {
 
   const activeItem = items.find((item) => isActivePath(location.pathname, item.path));
   const subPage = Object.entries(SUB_PAGES).find(([path]) => isActivePath(location.pathname, path))?.[1];
-  const title = subPage ?? activeItem?.label ?? "Mobile POS";
+  const title = subPage ?? activeItem?.label ?? SHOP_NAME;
 
   const sections = items.reduce<Record<string, NavItem[]>>((acc, item) => {
     (acc[item.section] ||= []).push(item);
@@ -100,7 +101,7 @@ export default function Shell({ children }: ShellProps) {
         <BrandMark />
         <Box>
           <Typography variant="h6" sx={{ lineHeight: 1.1 }}>
-            Mobile POS
+            {SHOP_NAME}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Offline till

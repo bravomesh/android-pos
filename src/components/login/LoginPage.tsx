@@ -18,6 +18,7 @@ import { toast } from "../../toast/useToast";
 import { loginUser } from "../../actions/auth";
 import type { AppDispatch } from "../../store";
 import { BrandMark } from "../home/Shell";
+import { SHOP_NAME } from "../../shop";
 import { stagger } from "../../theme/motion";
 
 const PROMISES = [
@@ -92,7 +93,7 @@ export default function LoginPage() {
         <Box sx={{ position: "relative", display: "flex", alignItems: "center", gap: 1.5 }} className="pos-enter">
           <BrandMark size={48} />
           <Typography variant="h5" sx={{ color: "#fff" }}>
-            Mobile POS
+            {SHOP_NAME}
           </Typography>
         </Box>
 

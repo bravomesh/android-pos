@@ -1,6 +1,6 @@
 {
-  "short_name": "Mobile POS",
-  "name": "Mobile Point of Sale",
+  "short_name": "Daisy's",
+  "name": "Daisy's Baby Shop",
   "description": "Offline-capable Point of Sale system for Android tablets",
   "icons": [
     {
@@ -14,5 +14,8 @@
   "orientation": "any",
   "theme_color": "#047857",
   "background_color": "#ffffff",
-  "categories": ["business", "productivity"]
+  "categories": [
+    "business",
+    "productivity"
+  ]
 }

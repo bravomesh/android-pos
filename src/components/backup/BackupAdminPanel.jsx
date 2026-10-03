@@ -68,7 +68,7 @@ class BackupAdminPanel extends Component {
     try {
       const dump = JSON.parse(await file.text());
       if (dump.format !== 'mobile-pos-backup') {
-        throw new Error('This is not a Mobile POS backup file');
+        throw new Error('This is not a backup file from this app');
       }
       this.setState({ restoreFile: { name: file.name, dump } });
     } catch (err) {

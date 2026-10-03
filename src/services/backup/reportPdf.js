@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatDisplay } from './dateUtils';
 import { money as KES } from '../../money';
+import { SHOP_NAME } from '../../shop';
 
 
 const formatTime = (iso) => {
@@ -18,7 +19,10 @@ export function buildDailyReportPdf(date, data) {
   let y = margin;
 
   doc.setFontSize(18);
-  doc.text('DAILY SALES REPORT', margin, y);
+  doc.text(SHOP_NAME, margin, y);
+  y += 20;
+  doc.setFontSize(13);
+  doc.text('Daily sales report', margin, y);
   y += 24;
 
   doc.setFontSize(11);

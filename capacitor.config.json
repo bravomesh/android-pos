@@ -1,6 +1,6 @@
 {
   "appId": "com.pos.mobilepos",
-  "appName": "Mobile POS",
+  "appName": "Daisy's Baby Shop",
   "webDir": "build",
   "plugins": {
     "SplashScreen": {
