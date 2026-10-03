@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { getCartItemsArraySelector } from "../../selectors";
 import { emptyCart } from "../../actions/cart";
+import { selectUser } from "../../reducers/auth";
 import { toast } from "../../toast/useToast";
 import api from "../../api";
 import { money } from "../../money";
@@ -30,6 +31,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
   const dispatch = useDispatch();
   const cartArray = useSelector(getCartItemsArraySelector);
   const summary = useSelector((state: RootState) => state.cart.summary);
+  const cashier = useSelector(selectUser);
 
   const [amountPaid, setAmountPaid] = useState("");
   const [error, setError] = useState("");
@@ -94,6 +96,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
         amountPaid: currency(amountPaid || 0).value,
         salesType,
         customerId: salesType === "Credit" ? customerId : undefined,
+        cashierId: cashier?.id,
       };
 
       await api.transaction.saveNormalSale(sale);

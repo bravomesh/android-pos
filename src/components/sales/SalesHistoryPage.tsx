@@ -23,6 +23,7 @@ interface SaleRow {
   sales_type: "Counter" | "Credit";
   transaction_status: "Done" | "Reversed";
   customer_name: string | null;
+  cashier_name: string | null;
   net_amount: number;
   amount_paid: number;
   items_count: number;
@@ -135,6 +136,7 @@ export default function SalesHistoryPage() {
                       <Typography variant="body2" color="text.secondary" noWrap>
                         {sale.items_count} item{sale.items_count === 1 ? "" : "s"}
                         {sale.customer_name ? ` · ${sale.customer_name}` : ""}
+                        {sale.cashier_name ? ` · by ${sale.cashier_name}` : ""}
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "right", flexShrink: 0 }}>

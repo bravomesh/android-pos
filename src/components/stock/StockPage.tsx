@@ -42,6 +42,7 @@ interface AdjustmentRow {
   qty_after: number;
   reason: string;
   notes: string | null;
+  user_name: string | null;
   created_at: string;
 }
 
@@ -231,9 +232,9 @@ export default function StockPage() {
                   <TableCell>{row.product_name}</TableCell>
                   <TableCell>
                     {row.reason}
-                    {row.notes ? (
+                    {row.notes || row.user_name ? (
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                        {row.notes}
+                        {[row.notes, row.user_name && `by ${row.user_name}`].filter(Boolean).join(" · ")}
                       </Typography>
                     ) : null}
                   </TableCell>

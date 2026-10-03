@@ -258,6 +258,7 @@ class SalesService {
         transaction_status = 'Done',
         customer_id = ?,
         is_active = 1,
+        created_by = COALESCE(?, created_by),
         updated_at = ?
       WHERE id = ?`,
       [
@@ -272,6 +273,9 @@ class SalesService {
         discountOnTotal,
         salesType,
         saleData.customerId || null,
+        // Whoever charged the sale, so a till that comes up short can be
+        // traced to a shift.
+        saleData.cashierId || null,
         now,
         transactionId
       ]
@@ -510,10 +514,12 @@ class SalesService {
       `SELECT
         th.*,
         c.name as customer_name,
+        u.name as cashier_name,
         (SELECT COALESCE(SUM(qty), 0) FROM transaction_details
           WHERE transaction_id = th.id) as items_count
       FROM transaction_headers th
       LEFT JOIN customers c ON th.customer_id = c.id
+      LEFT JOIN users u ON th.created_by = u.id
       WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
         AND th.transaction_status IN ('Done', 'Reversed')
       ORDER BY th.created_at DESC, th.id DESC`,

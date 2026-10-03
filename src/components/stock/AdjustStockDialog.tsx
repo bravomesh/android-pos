@@ -11,7 +11,9 @@ import Typography from "@mui/material/Typography";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import CircularProgress from "@mui/material/CircularProgress";
+import { useSelector } from "react-redux";
 import api from "../../api";
+import { selectUser } from "../../reducers/auth";
 import { toast } from "../../toast/useToast";
 
 export interface AdjustTarget {
@@ -48,6 +50,7 @@ export default function AdjustStockDialog({ product, onClose, onSaved }: AdjustS
   const [reason, setReason] = useState(DELTA_REASONS[0]);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const user = useSelector(selectUser);
 
   useEffect(() => {
     if (product) {
@@ -81,7 +84,7 @@ export default function AdjustStockDialog({ product, onClose, onSaved }: AdjustS
         qty: mode === "count" ? amount : direction === "out" ? -amount : amount,
         reason: reasons.includes(reason) ? reason : reasons[0],
         notes,
-      });
+      }, user?.id);
       toast.success("Stock updated");
       await onSaved();
     } catch (err) {

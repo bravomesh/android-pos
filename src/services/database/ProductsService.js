@@ -446,9 +446,10 @@ class ProductsService {
     const params = productId ? [productId, limit] : [limit];
 
     return db.query(
-      `SELECT a.*, p.name as product_name, p.unit
+      `SELECT a.*, p.name as product_name, p.unit, u.name as user_name
        FROM stock_adjustments a
        JOIN products p ON a.product_id = p.id
+       LEFT JOIN users u ON a.created_by = u.id
        ${where}
        ORDER BY a.created_at DESC, a.id DESC
        LIMIT ?`,

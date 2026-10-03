@@ -357,7 +357,8 @@ export const transactionApi = {
       tax: sale && sale.tax !== undefined ? String(sale.tax) : '0',
       discountOnTotal: (sale && sale.discountOnTotal) || 0,
       amountPaid: sale ? sale.amountPaid : undefined,
-      customerId: sale && sale.customerId
+      customerId: sale && sale.customerId,
+      cashierId: sale && sale.cashierId
     };
 
     const result = sale && sale.salesType === 'Credit'
