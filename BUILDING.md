@@ -93,6 +93,32 @@ normal sideloading prompt, and is the only prompt the app needs.
 4. Set up **Product types**, then add your products under **Products**.
 5. Check **Stock** shows what you actually have on the shelves.
 
+## Developing on a phone with live reload
+
+Rebuilding the APK after every change is slow. While working on the app,
+run it on a phone over USB with live reload instead:
+
+1. On the phone, turn on **USB debugging** (Settings → About phone → tap
+   **Build number** 7 times, then Settings → System → Developer options),
+   plug it in, and accept the prompt.
+2. Make sure a JDK 21 is installed (see **What you need**).
+3. Run:
+
+   ```bash
+   npm run dev:android
+   ```
+
+The first run builds and installs the app (a few minutes); after that the
+app on the phone loads from the dev server on this computer through the
+USB cable, and every saved change appears on the phone straight away. The
+app still uses the phone's own SQLite database, exactly as in the shop.
+
+Press **Ctrl+C** to stop. The app on the phone then needs the dev server,
+so run `npm run build:android` and install normally (step 3 above) before
+using it without the computer. With more than one device attached, pick
+one with `DEVICE=<id> npm run dev:android` (ids from
+`npx cap run android --list`).
+
 ## Where the data lives
 
 Everything is in a local SQLite database on the device. The app never
