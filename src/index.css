@@ -5,6 +5,16 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Spinner arrows on number boxes are useless on a touch till. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Shared keyframes. Durations and easings come from src/theme/motion.ts. */
 @keyframes pos-fade-up {
   from { opacity: 0; transform: translateY(10px); }
