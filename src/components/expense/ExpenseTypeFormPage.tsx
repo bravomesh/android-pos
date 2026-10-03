@@ -4,7 +4,7 @@ import FormPage from "../crud/FormPage";
 import { FieldDef } from "../crud/types";
 import api from "../../api";
 
-const fields: FieldDef[] = [{ name: "description", label: "Description", required: true }];
+const fields: FieldDef[] = [{ name: "description", label: "Description", wide: true, required: true }];
 
 export default function ExpenseTypeFormPage() {
   const { id } = useParams();

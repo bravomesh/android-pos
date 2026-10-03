@@ -17,6 +17,12 @@ export interface ListPageProps<Row extends { id: number | string }> {
   onEdit: (row: Row) => void;
   onDelete: (row: Row) => Promise<void>;     // page calls api delete; ListPage reloads + toasts
   addLabel?: string;                         // default "Add new"
+  /** Column whose text becomes the coloured initials tile beside each row. */
+  avatarKey?: string;
+  /** Extra buttons beside Add, e.g. a link to product types. */
+  toolbar?: ReactNode;
+  /** Icon and wording for the screen before anything has been added. */
+  empty?: { icon: ReactNode; title: string; message?: string };
 }
 
 export interface FieldDef {
@@ -26,6 +32,8 @@ export interface FieldDef {
   required?: boolean;
   options?: { value: string | number; label: string }[]; // for select
   helperText?: string;
+  /** Takes the full width of the form instead of one of two columns. */
+  wide?: boolean;
 }
 
 export interface FormPageProps {
@@ -34,4 +42,6 @@ export interface FormPageProps {
   initial: Record<string, unknown>;
   onSubmit: (values: Record<string, unknown>) => Promise<void>; // create or update; throws on failure
   submitLabel?: string; // default "Save"
+  /** One line under the title saying what the form is for. */
+  subtitle?: string;
 }

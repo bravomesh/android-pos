@@ -17,9 +17,15 @@ const UNIT_OPTIONS = [
 ];
 
 const BASE_FIELDS: FieldDef[] = [
-  { name: "name", label: "Name", required: true },
+  { name: "name", label: "Name", wide: true, required: true },
   { name: "productTypeId", label: "Product Type", type: "select", options: [] },
-  { name: "description", label: "Description" },
+  {
+    name: "unit",
+    label: "Sold by",
+    type: "select",
+    options: UNIT_OPTIONS,
+    helperText: "Choose Service for things you sell but do not stock.",
+  },
   {
     name: "sku",
     label: "SKU / shelf code",
@@ -30,13 +36,6 @@ const BASE_FIELDS: FieldDef[] = [
     label: "Barcode",
     helperText: "Scan or type the code printed on the packaging.",
   },
-  {
-    name: "unit",
-    label: "Sold by",
-    type: "select",
-    options: UNIT_OPTIONS,
-    helperText: "Choose Service for things you sell but do not stock.",
-  },
   { name: "costPrice", label: "Cost price", type: "money", required: true },
   { name: "sellingPrice", label: "Selling price", type: "money", required: true },
   {
@@ -45,6 +44,7 @@ const BASE_FIELDS: FieldDef[] = [
     type: "number",
     helperText: "Warn when stock drops to this. Leave blank for no warning.",
   },
+  { name: "description", label: "Description", wide: true },
 ];
 
 const NEW_ONLY_FIELDS: FieldDef[] = [

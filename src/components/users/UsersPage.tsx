@@ -59,6 +59,7 @@ export default function UsersPage() {
       <ListPage<UserRow>
         key={reloadKey}
         title="Users"
+        avatarKey="name"
         columns={columns}
         fetchRows={async () => (await api.user.getAll()).data}
         onAdd={() => navigate("/users/new")}

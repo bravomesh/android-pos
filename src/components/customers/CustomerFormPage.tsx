@@ -5,9 +5,9 @@ import { FieldDef } from "../crud/types";
 import api from "../../api";
 
 const fields: FieldDef[] = [
-  { name: "name", label: "Name", required: true },
-  { name: "description", label: "Description" },
-  { name: "address", label: "Address" },
+  { name: "name", label: "Name", wide: true, required: true },
+  { name: "description", label: "Description", wide: true },
+  { name: "address", label: "Address", wide: true },
   { name: "mobile", label: "Mobile" },
   { name: "email", label: "Email" },
 ];

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import LocalShippingIcon from "@mui/icons-material/LocalShippingRounded";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
@@ -27,6 +28,8 @@ export default function VendorsPage() {
   return (
     <ListPage<VendorRow>
       title="Vendors"
+        avatarKey="name"
+        empty={{ icon: <LocalShippingIcon />, title: "No vendors yet", message: "Add the suppliers you buy stock from." }}
       columns={columns}
       fetchRows={async () => (await api.vendor.fetchAll()).data}
       searchRows={async (q: string) => (await api.vendor.searchByIdAndGetByPages(q)).data}

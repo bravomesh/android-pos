@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import CategoryIcon from "@mui/icons-material/CategoryRounded";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
@@ -19,6 +20,7 @@ export default function ProductTypesPage() {
   return (
     <ListPage<ProductTypeRow>
       title="Product Types"
+        empty={{ icon: <CategoryIcon />, title: "No product types yet", message: "Types group products on the register, like Drinks or Snacks." }}
       columns={columns}
       fetchRows={async () => (await api.productType.fetchAll()).data}
       searchRows={async (q: string) => (await api.productType.searchByIdAndGetByPages(q)).data}

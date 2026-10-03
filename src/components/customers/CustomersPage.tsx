@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import PeopleIcon from "@mui/icons-material/PeopleAltRounded";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import TakePaymentDialog from "./TakePaymentDialog";
@@ -34,7 +35,17 @@ export default function CustomersPage() {
         row.outstanding_balance > 0 ? (
           <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
             {money(row.outstanding_balance)}
-            <Button size="small" onClick={() => setPaying(row)} data-testid={`take-payment-${row.id}`}>
+            <Button
+              size="small"
+              variant="contained"
+              color="secondary"
+              onClick={(e) => {
+                // The row itself opens the customer for editing.
+                e.stopPropagation();
+                setPaying(row);
+              }}
+              data-testid={`take-payment-${row.id}`}
+            >
               Take payment
             </Button>
           </Box>
@@ -49,6 +60,8 @@ export default function CustomersPage() {
       <ListPage<CustomerRow>
         key={reloadKey}
         title="Customers"
+        avatarKey="name"
+        empty={{ icon: <PeopleIcon />, title: "No customers yet", message: "Add regulars here to sell to them on account." }}
         columns={columns}
         fetchRows={async () => (await api.customer.fetchAll()).data}
         searchRows={async (q: string) => (await api.customer.searchByIdAndGetByPages(q)).data}

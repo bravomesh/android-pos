@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import ReceiptIcon from "@mui/icons-material/ReceiptLongRounded";
+import CategoryIcon from "@mui/icons-material/CategoryRounded";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
@@ -26,23 +27,22 @@ export default function ExpensesPage() {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button size="small" onClick={() => navigate("/expensetypes")} sx={{ minHeight: 48 }}>
+    <ListPage<ExpenseRow>
+      title="Expenses"
+      toolbar={
+        <Button variant="outlined" startIcon={<CategoryIcon />} onClick={() => navigate("/expensetypes")} sx={{ minHeight: 48 }}>
           Expense types
         </Button>
-      </Box>
-      <ListPage<ExpenseRow>
-        title="Expenses"
-        columns={columns}
-        fetchRows={async () => (await api.expense.fetchAll()).data}
-        searchRows={async (q: string) => (await api.expense.searchByIdAndGetByPages(q)).data}
-        onAdd={() => navigate("/expense/new")}
-        onEdit={(row) => navigate(`/expense/edit/${row.id}`)}
-        onDelete={async (row) => {
-          await api.expense.delete(row.id);
-        }}
-      />
-    </Box>
+      }
+      empty={{ icon: <ReceiptIcon />, title: "No expenses yet", message: "Record rent, power, transport and other costs to see your real profit." }}
+      columns={columns}
+      fetchRows={async () => (await api.expense.fetchAll()).data}
+      searchRows={async (q: string) => (await api.expense.searchByIdAndGetByPages(q)).data}
+      onAdd={() => navigate("/expense/new")}
+      onEdit={(row) => navigate(`/expense/edit/${row.id}`)}
+      onDelete={async (row) => {
+        await api.expense.delete(row.id);
+      }}
+    />
   );
 }

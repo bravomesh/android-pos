@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import MoveToInboxIcon from "@mui/icons-material/MoveToInboxRounded";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
@@ -26,6 +27,8 @@ export default function ReceivingsPage() {
   return (
     <ListPage<ReceivingRow>
       title="Receivings"
+        avatarKey="product_name"
+        empty={{ icon: <MoveToInboxIcon />, title: "No stock received yet", message: "Each delivery you book in here adds to stock." }}
       columns={columns}
       fetchRows={async () => (await api.receiving.fetchAll()).data}
       searchRows={async (q: string) => (await api.receiving.searchByIdAndGetByPages(q)).data}

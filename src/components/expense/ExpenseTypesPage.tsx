@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import CategoryIcon from "@mui/icons-material/CategoryRounded";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
@@ -19,6 +20,7 @@ export default function ExpenseTypesPage() {
   return (
     <ListPage<ExpenseTypeRow>
       title="Expense Types"
+        empty={{ icon: <CategoryIcon />, title: "No expense types yet", message: "Types group costs, like Rent or Transport." }}
       columns={columns}
       fetchRows={async () => (await api.expenseType.fetchAll()).data}
       searchRows={async (q: string) => (await api.expenseType.searchByIdAndGetByPages(q)).data}

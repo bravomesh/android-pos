@@ -7,7 +7,7 @@ import api from "../../api";
 const BASE_FIELDS: FieldDef[] = [
   { name: "expenseTypeId", label: "Expense type", type: "select", options: [] },
   { name: "amount", label: "Amount", type: "money", required: true },
-  { name: "description", label: "Expense description" },
+  { name: "description", label: "Expense description", wide: true },
   { name: "spentAt", label: "Spent At", type: "date" },
 ];
 
