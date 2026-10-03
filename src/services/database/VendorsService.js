@@ -108,6 +108,11 @@ class VendorsService {
    * Delete a vendor
    */
   async deleteVendor(id) {
+    const used = await db.query('SELECT COUNT(*) as count FROM receivings WHERE vendor_id = ?', [id]);
+    if (used[0]?.count > 0) {
+      throw new Error('This vendor has receivings on record, so it cannot be deleted');
+    }
+
     await db.run('DELETE FROM vendors WHERE id = ?', [id]);
     return { success: true };
   }

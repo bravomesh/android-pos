@@ -148,6 +148,10 @@ class ExpensesService {
    */
   async updateExpense(id, data) {
     const now = new Date().toISOString();
+    // A blank date keeps the day the expense was booked to; falling back to
+    // the UTC instant would move an evening expense to tomorrow.
+    const original = await this.getExpenseById(id);
+    const spentAt = data.spentAt || original?.spent_at || localDay();
 
     await db.run(
       `UPDATE expenses SET
@@ -160,7 +164,7 @@ class ExpensesService {
       [
         data.description || '',
         data.amount || 0,
-        data.spentAt || now,
+        spentAt,
         data.expenseTypeId || null,
         now,
         id

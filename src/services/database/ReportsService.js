@@ -293,9 +293,10 @@ class ReportsService {
     const start = startDate || today;
     const end = endDate || today;
 
-    // Revenue from sales
+    // Revenue from sales. Tax is collected on the government's behalf, so it
+    // is not part of what the shop earned.
     const revenueResult = await db.query(
-      `SELECT COALESCE(SUM(net_amount), 0) as revenue
+      `SELECT COALESCE(SUM(net_amount - tax_amount), 0) as revenue
        FROM transaction_headers
        WHERE ${localDayOf('created_at')} BETWEEN ? AND ?
          AND transaction_status = 'Done'
@@ -353,9 +354,12 @@ class ReportsService {
     const start = startDate || today;
     const end = endDate || today;
 
-    // Sales per day — headers only (no join → no multiplication).
+    // Sales per day — headers only (no join → no multiplication). Profit is
+    // worked out on takings less tax, which belongs to the government.
     const salesRows = await db.query(
-      `SELECT ${localDayOf('created_at')} as day, COALESCE(SUM(net_amount), 0) as sales
+      `SELECT ${localDayOf('created_at')} as day,
+              COALESCE(SUM(net_amount), 0) as sales,
+              COALESCE(SUM(net_amount - tax_amount), 0) as revenue
        FROM transaction_headers
        WHERE ${localDayOf('created_at')} BETWEEN ? AND ?
          AND transaction_status = 'Done'
@@ -381,7 +385,7 @@ class ReportsService {
     const days = salesRows.map(r => ({
       date: r.day,
       sales: r.sales,
-      profit: r.sales - (cogsByDay.get(r.day) || 0)
+      profit: r.revenue - (cogsByDay.get(r.day) || 0)
     }));
 
     return {

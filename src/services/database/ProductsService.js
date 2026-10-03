@@ -60,6 +60,11 @@ class ProductsService {
    * Delete a product type
    */
   async deleteProductType(id) {
+    const used = await db.query('SELECT COUNT(*) as count FROM products WHERE product_type_id = ?', [id]);
+    if (used[0]?.count > 0) {
+      throw new Error(`This type still has ${used[0].count} products. Move them to another type first`);
+    }
+
     await db.run('DELETE FROM product_types WHERE id = ?', [id]);
     return { success: true };
   }
@@ -252,6 +257,19 @@ class ProductsService {
    * Delete a product and its stock record
    */
   async deleteProduct(id) {
+    // Sales and receivings keep pointing at the product, so it has to stay
+    // for the records (and the reports built on them) to make sense.
+    const used = await db.query(
+      `SELECT
+        (SELECT COUNT(*) FROM transaction_details WHERE product_id = ?) +
+        (SELECT COUNT(*) FROM receivings WHERE product_id = ?) as count`,
+      [id, id]
+    );
+    if (used[0]?.count > 0) {
+      const product = await this.getProductById(id);
+      throw new Error(`${product?.name || 'This product'} has been sold or received, so it cannot be deleted`);
+    }
+
     // Stock will be deleted via CASCADE
     await db.run('DELETE FROM products WHERE id = ?', [id]);
     return { success: true };
@@ -487,7 +505,7 @@ class ProductsService {
       FROM products p
       JOIN stock s ON p.id = s.product_id
       LEFT JOIN product_types pt ON p.product_type_id = pt.id
-      WHERE s.qty <= COALESCE(p.reorder_level, ?)
+      WHERE p.track_stock = 1 AND s.qty <= COALESCE(p.reorder_level, ?)
       ORDER BY s.qty ASC`,
       [threshold, threshold]
     );
