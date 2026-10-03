@@ -367,7 +367,7 @@ class ProductsService {
    * Take from stock, refusing to go negative.
    *
    * The `qty >= ?` guard lives in the UPDATE rather than in a preceding
-   * SELECT so the check and the write are one statement — a read-then-write
+   * SELECT so the check and the write are one statement, a read-then-write
    * pair can be overtaken by a concurrent sale on the same product.
    */
   async decrementStock(productId, amount) {
@@ -439,7 +439,7 @@ class ProductsService {
   }
 
   /**
-   * Adjustment history, newest first — optionally for one product.
+   * Adjustment history, newest first, optionally for one product.
    */
   async getStockAdjustments({ productId = null, limit = 200 } = {}) {
     const where = productId ? 'WHERE a.product_id = ?' : '';

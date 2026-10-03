@@ -37,7 +37,7 @@ const wrapResponse = (data) => ({
  * On-device datasets are small, so `fetchAll`/`fetchByPages` both just
  * return every row with an empty pagination header (getPaginationInfo(undefined)
  * degrades to `{}`, which the datagrid/pagination controls already handle
- * gracefully — footer is hidden, prev/next are inert).
+ * gracefully, footer is hidden, prev/next are inert).
  *
  * `searchByIdAndGetByPages` matches the legacy "type an id or a name" search
  * box behaviour: exact match on `id`, partial (case-insensitive) match on any
@@ -313,7 +313,7 @@ export const transactionApi = {
    * Completes the counter sale started by getTransactionId().
    *
    * `sale` (from NormalSale.js) is `{ items, total, taxAmount, totalDiscount,
-   * netTotal }` — no transactionId, since this is a single-register app and
+   * netTotal }`, no transactionId, since this is a single-register app and
    * the id was already stashed by getTransactionId(). `items` are cart lines
    * shaped `{ id, name, qty, price, discount, discountTotal, sellingPrice,
    * totalPrice }`.

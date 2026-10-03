@@ -27,6 +27,8 @@ import CloudOffIcon from '@mui/icons-material/CloudOffRounded';
 import CloudQueueIcon from '@mui/icons-material/CloudQueueRounded';
 import CloudUploadIcon from '@mui/icons-material/CloudUploadRounded';
 import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
+import DeleteSweepIcon from '@mui/icons-material/DeleteSweepRounded';
+import { emptyCart } from '../../actions/cart';
 
 class BackupAdminPanel extends Component {
   state = {
@@ -35,7 +37,9 @@ class BackupAdminPanel extends Component {
     rows: [],
     lastResult: null,
     restoreFile: null,
-    restoring: false
+    restoring: false,
+    confirmClear: false,
+    clearing: false
   };
 
   componentDidMount() {
@@ -54,9 +58,9 @@ class BackupAdminPanel extends Component {
     const result = await BackupScheduler.runManual(this.state.date);
     this.setState({ busy: false, lastResult: result });
     if (result.ok) {
-      toast.success(`Backup succeeded — wrote ${result.pdfUri}`);
+      toast.success(`Backup saved to ${result.pdfUri}`);
     } else {
-      toast.error(`Backup failed — ${result.error}`);
+      toast.error(`Backup failed: ${result.error}`);
     }
     await this.refresh();
   };
@@ -87,13 +91,28 @@ class BackupAdminPanel extends Component {
       // no longer exist.
       store.dispatch(logout());
     } catch (err) {
-      toast.error(`Restore failed, nothing was changed — ${err.message}`);
+      toast.error(`Restore failed, nothing was changed: ${err.message}`);
       this.setState({ restoring: false });
     }
   };
 
+  handleClear = async () => {
+    this.setState({ confirmClear: false, clearing: true });
+    try {
+      await BackupService.saveSafetyCopy();
+      await DatabaseService.clearShopData();
+      // The cart may still hold products that no longer exist.
+      store.dispatch(emptyCart());
+      toast.success('The shop is empty and ready for your own products.');
+    } catch (err) {
+      toast.error(`Could not clear the shop, nothing was changed: ${err.message}`);
+    } finally {
+      this.setState({ clearing: false });
+    }
+  };
+
   render() {
-    const { date, busy, rows, lastResult, restoreFile, restoring } = this.state;
+    const { date, busy, rows, lastResult, restoreFile, restoring, confirmClear, clearing } = this.state;
     const latest = rows[0];
     const healthy = latest && latest.status === 'success';
 
@@ -125,11 +144,11 @@ class BackupAdminPanel extends Component {
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.85 }}>
               {latest
-                ? `Last run for ${latest.date}${latest.error_message ? ` — ${latest.error_message}` : ''}`
+                ? `Last run for ${latest.date}${latest.error_message ? `: ${latest.error_message}` : ''}`
                 : 'The first one runs tonight at 00:30, or start one below.'}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.75 }}>
-              Files go to Documents/POS/Daily — copy them off the tablet regularly.
+              Files go to Documents/POS/Daily. Copy them off the tablet regularly.
             </Typography>
           </Box>
         </Box>
@@ -160,7 +179,7 @@ class BackupAdminPanel extends Component {
               </Stack>
               {lastResult && (
                 <Alert severity={lastResult.ok ? 'success' : 'error'} className="pos-enter">
-                  {lastResult.ok ? `Saved ${lastResult.pdfUri}` : `Failed — ${lastResult.error}`}
+                  {lastResult.ok ? `Saved ${lastResult.pdfUri}` : `Failed: ${lastResult.error}`}
                 </Alert>
               )}
             </CardContent>
@@ -185,6 +204,36 @@ class BackupAdminPanel extends Component {
             </CardContent>
           </Card>
         </Box>
+
+        <Card className="pos-enter" sx={{ animationDelay: '150ms', borderColor: 'error.main' }}>
+          <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+            <DeleteSweepIcon color="error" />
+            <Box sx={{ flex: '1 1 260px' }}>
+              <Typography variant="h6">Start afresh</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Clears every product, sale, customer, supplier and expense, such as the sample shop
+                the app starts with. User accounts stay, and a copy of the data is saved first.
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => this.setState({ confirmClear: true })}
+              disabled={clearing}
+              sx={{ minHeight: 48 }}
+              data-testid="start-afresh"
+            >
+              {clearing ? 'Clearing…' : 'Clear everything'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <ConfirmDialog
+          open={confirmClear}
+          message="Clear every product, sale, customer, supplier and expense from this tablet? User accounts stay. A copy of the current data is saved to the backup folder first."
+          onConfirm={this.handleClear}
+          onCancel={() => this.setState({ confirmClear: false })}
+        />
 
         <ConfirmDialog
           open={!!restoreFile}

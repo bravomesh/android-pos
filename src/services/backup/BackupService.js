@@ -15,7 +15,7 @@ const BACKUP_DIR = 'POS/Daily';
  * runtime permission and without the "All files access" special grant, so the
  * app works the same on any handset or tablet regardless of vendor. Writing
  * to the root of shared storage, as this used to, needs MANAGE_EXTERNAL_STORAGE
- * on Android 11+ — a permission Play restricts, and one that several vendor
+ * on Android 11+, a permission Play restricts, and one that several vendor
  * skins bury behind their own settings screens.
  *
  * A second copy is attempted in the shared Documents folder purely for

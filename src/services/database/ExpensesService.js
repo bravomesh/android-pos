@@ -123,7 +123,7 @@ class ExpensesService {
   async createExpense(data) {
     const now = new Date().toISOString();
     // spent_at is compared as a plain calendar date, so an unspecified date
-    // defaults to the local day rather than the UTC instant — otherwise an
+    // defaults to the local day rather than the UTC instant, otherwise an
     // evening expense in a western timezone books itself to tomorrow.
     const spentAt = data.spentAt || localDay();
 

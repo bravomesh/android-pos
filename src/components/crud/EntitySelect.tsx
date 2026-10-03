@@ -37,7 +37,7 @@ export default function EntitySelect({
   return (
     <FormControl fullWidth error={error}>
       <InputLabel id={labelId}>{label}</InputLabel>
-      {/* MUI Select renders a hidden input carrying `name` — used by forms/tests. */}
+      {/* MUI Select renders a hidden input carrying `name`, used by forms/tests. */}
       <Select
         labelId={labelId}
         id={name}

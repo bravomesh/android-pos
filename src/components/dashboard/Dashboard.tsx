@@ -98,7 +98,7 @@ function GetStarted({ onLoaded }: { onLoaded: () => void }) {
       <Box sx={{ flex: "1 1 260px" }}>
         <Typography variant="h6">Your shop is empty</Typography>
         <Typography variant="body2" color="text.secondary">
-          Load a sample baby shop to explore — products, suppliers, customers and a week of sales — or start
+          Load a sample baby shop to explore (products, suppliers, customers and a week of sales), or start
           with your own products. The sample can only be loaded while the shop is empty.
         </Typography>
       </Box>

@@ -21,7 +21,7 @@ export interface CartLine {
 }
 
 // Money fields start as formatted strings and become numbers after the first
-// recalculation — components tolerate both. (Parity with the legacy reducer.)
+// recalculation, components tolerate both. (Parity with the legacy reducer.)
 type Money = number | string;
 
 export interface CartSummary {

@@ -507,7 +507,7 @@ class SalesService {
 
   /**
    * Completed and reversed sales in a date range, newest first, with how
-   * many items each one had — the list a shopkeeper picks a sale from.
+   * many items each one had, the list a shopkeeper picks a sale from.
    */
   async getTransactionsByDateRange(startDate, endDate) {
     const transactions = await db.query(

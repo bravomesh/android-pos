@@ -35,7 +35,7 @@ class BackupBanner extends Component {
     if (result && result.ok) {
       toast.success('Backup retried successfully');
     } else if (result) {
-      toast.error(`Retry failed — ${result.error}`);
+      toast.error(`Retry failed: ${result.error}`);
     }
   };
 

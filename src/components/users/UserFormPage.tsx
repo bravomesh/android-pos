@@ -11,8 +11,8 @@ const FIELDS: FieldDef[] = [
     type: "select",
     required: true,
     options: [
-      { value: "NonAdmin", label: "Shopkeeper — works the till" },
-      { value: "Admin", label: "Owner — can do everything" },
+      { value: "NonAdmin", label: "Shopkeeper (works the till)" },
+      { value: "Admin", label: "Owner (can do everything)" },
     ],
   },
 ];

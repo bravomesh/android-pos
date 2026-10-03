@@ -51,7 +51,7 @@ const AUTO_NEXT_MS = 4000;
 
 /**
  * Amounts a customer is likely to hand over: the exact bill, then the bill
- * rounded up to the next 50, 100, 500 and 1,000 — the notes and coins a
+ * rounded up to the next 50, 100, 500 and 1,000, the notes and coins a
  * cashier actually receives.
  */
 export const quickCash = (due: number) => {
@@ -164,7 +164,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
 
   const handleConfirm = async () => {
     // A cash sale must cover the bill. A credit sale is allowed to fall
-    // short — that shortfall is exactly what the customer now owes.
+    // short, that shortfall is exactly what the customer now owes.
     if (salesType === "Counter" && balance.value < 0) {
       setError("The amount paid is less than the bill");
       return;
@@ -296,7 +296,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
                 }}
                 getOptionLabel={(c) => c.name}
                 isOptionEqualToValue={(a, b) => String(a.id) === String(b.id)}
-                noOptionsText="No customers yet — add them under Customers"
+                noOptionsText="No customers yet. Add them under Customers"
                 renderInput={(params) => (
                   <TextField
                     {...params}

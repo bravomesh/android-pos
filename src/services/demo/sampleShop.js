@@ -1,6 +1,8 @@
 /**
  * A sample baby shop to explore the app with: categories, products,
- * suppliers, customers, deliveries, expenses and a week of sales.
+ * suppliers (some delivered on credit), customers (some buying on
+ * account), deliveries, expenses and a week of sales. A new install starts
+ * with it; the owner can clear it from the Backup screen.
  *
  * Everything goes in through the same services the screens use, so the
  * sample behaves exactly like real trading (stock moves, balances add up,
@@ -144,22 +146,28 @@ export async function loadSampleShop(cashierId = null) {
   }
 
   // Deliveries earlier in the week, each from the supplier of that line.
+  // Some were taken on credit: amount paid less than the delivery cost
+  // (undefined means paid in full).
   const deliveries = [
-    ['Pampers Baby-Dry Size 3 (44)', 0, 12, 1350, 6],
-    ['Baby wipes (72)', 0, 24, 290, 6],
-    ['NAN 1 infant formula 400g', 1, 6, 1600, 5],
-    ['Onesies 0-3m (3-pack)', 2, 6, 850, 4],
-    ['Soft plush bunny', 3, 4, 620, 3],
+    ['Pampers Baby-Dry Size 3 (44)', 0, 12, 1350, 6, 10000],
+    ['Baby wipes (72)', 0, 24, 290, 6, undefined],
+    ['NAN 1 infant formula 400g', 1, 6, 1600, 5, 0],
+    ['Baby shampoo 200ml', 1, 10, 380, 5, undefined],
+    ['Onesies 0-3m (3-pack)', 2, 6, 850, 4, undefined],
+    ['Soft plush bunny', 3, 4, 620, 3, 1000],
   ];
-  for (const [name, vendor, qty, price, ago] of deliveries) {
+  for (const [name, vendor, qty, price, ago, amountPaid] of deliveries) {
     await api.receiving.createNew({
       productId: products[name].id,
       vendorId: vendors[vendor].id,
       qty,
       price,
+      amountPaid,
       payedAt: localDate(daysAgo(ago, 9)),
     });
   }
+  // The formula supplier has since been paid part of what is owed.
+  await api.vendor.payVendor(vendors[1].id, 4000);
 
   const expenseTypes = {};
   for (const [type, description, amount, ago] of EXPENSES) {

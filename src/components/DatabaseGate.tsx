@@ -14,6 +14,7 @@ import Button from "@mui/material/Button";
 import DatabaseService from "../services/database/DatabaseService";
 import { BrandMark } from "./home/Shell";
 import BackupScheduler from "../services/backup/BackupScheduler";
+import { loadSampleShop } from "../services/demo/sampleShop";
 
 type GateState = "initializing" | "ready" | "error";
 
@@ -46,6 +47,7 @@ const PulsingMark = () => (
 export default function DatabaseGate({ children }: DatabaseGateProps) {
   const [state, setState] = useState<GateState>("initializing");
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState("Setting up database");
 
   const initializeDatabase = useCallback(async () => {
     setState("initializing");
@@ -53,6 +55,18 @@ export default function DatabaseGate({ children }: DatabaseGateProps) {
 
     try {
       await DatabaseService.initialize();
+      // A brand-new install opens on the sample baby shop, so there is
+      // something to explore straight away. The owner clears it from the
+      // Backup screen when the real shop starts.
+      if (DatabaseService.createdFresh) {
+        DatabaseService.createdFresh = false;
+        setStep("Setting up the sample shop");
+        try {
+          await loadSampleShop(1);
+        } catch (err) {
+          console.error("Sample shop could not be loaded:", err);
+        }
+      }
       setState("ready");
       BackupScheduler.init().catch((err: unknown) =>
         console.error("BackupScheduler init failed:", err)
@@ -85,7 +99,7 @@ export default function DatabaseGate({ children }: DatabaseGateProps) {
           Preparing your store…
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Setting up database
+          {step}
         </Typography>
       </Box>
     );

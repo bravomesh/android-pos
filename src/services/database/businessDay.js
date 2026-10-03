@@ -33,7 +33,7 @@ export const localDayBefore = (days, from = new Date()) => {
  * SQLite modifier turning a stored UTC timestamp into local time.
  *
  * Built from Date.getTimezoneOffset(), so it is a number this module
- * produced — never user input — and safe to inline into SQL.
+ * produced, never user input, and safe to inline into SQL.
  */
 export const localOffsetModifier = () => {
   const minutes = -new Date().getTimezoneOffset();

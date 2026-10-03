@@ -176,7 +176,7 @@ export default function StockPage() {
                           label={stockLabel(row.stock_qty, row.unit)}
                         />
                       </TableCell>
-                      <TableCell align="right">{row.reorder_level ?? "—"}</TableCell>
+                      <TableCell align="right">{row.reorder_level ?? "-"}</TableCell>
                       <TableCell align="right">{money(row.stock_cost_value)}</TableCell>
                       <TableCell align="right">
                         <Button

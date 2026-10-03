@@ -165,7 +165,7 @@ class UsersService {
   }
 
   /**
-   * Set a new password without the old one — for an administrator getting
+   * Set a new password without the old one, for an administrator getting
    * a cashier who forgot theirs back on the till.
    */
   async resetPassword(id, newPassword) {

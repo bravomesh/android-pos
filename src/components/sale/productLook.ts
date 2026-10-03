@@ -33,7 +33,7 @@ export const initials = (name: string) => {
 // Units that read as countable things take a plural ("3 packs"); measures do not ("3 kg").
 const PLURAL: Record<string, string> = { pack: "packs", box: "boxes" };
 
-/** "17", "3 kg", "10 packs" — how much of something is on the shelf. */
+/** "17", "3 kg", "10 packs", how much of something is on the shelf. */
 export const stockLabel = (qty: number, unit?: string | null) => {
   if (!unit || unit === "pcs") return `${qty}`;
   return `${qty} ${qty === 1 ? unit : PLURAL[unit] ?? unit}`;

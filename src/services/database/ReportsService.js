@@ -215,8 +215,8 @@ class ReportsService {
       // The sold lines are filtered in a subquery rather than in the ON
       // clause of a LEFT JOIN. Conditions on the right-hand table of a LEFT
       // JOIN do not remove left-hand rows, so the previous form counted every
-      // line ever added to a cart — abandoned carts, open transactions and
-      // reversed sales included — as if it had been sold.
+      // line ever added to a cart, abandoned carts, open transactions and
+      // reversed sales included, as if it had been sold.
       `SELECT
         p.id,
         p.name,
@@ -354,7 +354,7 @@ class ReportsService {
     const start = startDate || today;
     const end = endDate || today;
 
-    // Sales per day — headers only (no join → no multiplication). Profit is
+    // Sales per day, headers only (no join → no multiplication). Profit is
     // worked out on takings less tax, which belongs to the government.
     const salesRows = await db.query(
       `SELECT ${localDayOf('created_at')} as day,
@@ -369,7 +369,7 @@ class ReportsService {
       [start, end]
     );
 
-    // COGS per day — details joined to their (Done) headers.
+    // COGS per day, details joined to their (Done) headers.
     const cogsRows = await db.query(
       `SELECT ${localDayOf('th.created_at')} as day, COALESCE(SUM(td.qty * td.cost_price), 0) as cogs
        FROM transaction_details td

@@ -81,7 +81,7 @@ export const verifyPassword = async (password, stored) => {
   if (parts[0] !== 'pbkdf2' || parts.length !== 4) {
     // Anything else is a legacy or placeholder hash from before this module
     // existed. Those were not real password hashes, so nothing authenticates
-    // against them — the account has to be given a new password.
+    // against them, the account has to be given a new password.
     return false;
   }
 

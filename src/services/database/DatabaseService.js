@@ -17,6 +17,8 @@ class DatabaseService {
     this.initialized = false;
     this.transactionDepth = 0;
     this.platform = Capacitor.getPlatform();
+    // True only on the very first launch, when the database was just made.
+    this.createdFresh = false;
   }
 
   /**
@@ -357,6 +359,7 @@ class DatabaseService {
         'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
         ['admin', await hashPassword('admin'), 'Admin']
       );
+      this.createdFresh = true;
       console.log('Default admin user created');
     }
 
@@ -431,7 +434,7 @@ class DatabaseService {
    * Nested calls join the outermost transaction rather than starting a new
    * one, because SQLite does not support nested BEGIN.
    *
-   * ponytail: no lock — a write issued from elsewhere while a transaction is
+   * ponytail: no lock, a write issued from elsewhere while a transaction is
    * open joins it. Fine for one till driven by one cashier; add a queue here
    * if background writers beyond the nightly backup appear.
    */
@@ -514,7 +517,7 @@ class DatabaseService {
    * Dump the whole database as JSON.
    *
    * The backup used to copy the SQLite file straight off the filesystem,
-   * using a path with the package name baked into it — which only held for
+   * using a path with the package name baked into it, which only held for
    * one build of one app, could catch the file mid-write, and needed
    * storage permissions to read. Reading the tables through the normal
    * connection works on every platform the app runs on, including the web
@@ -545,15 +548,29 @@ class DatabaseService {
   }
 
   /**
+   * Empty the shop: products, stock, sales, customers, suppliers and
+   * expenses all go. User accounts and the record of past backups stay, so
+   * the owner is still signed in and nobody has to be set up again.
+   */
+  async clearShopData() {
+    const keep = new Set(['users', 'transaction_id', 'daily_exports']);
+    await this.withTransaction(async () => {
+      for (const table of [...DatabaseService.TABLES].reverse()) {
+        if (!keep.has(table)) await this.run(`DELETE FROM ${table}`);
+      }
+    });
+  }
+
+  /**
    * Replace everything in the database with a backup made by
-   * exportAllTables() — how a shop gets its records onto a new tablet
+   * exportAllTables(), how a shop gets its records onto a new tablet
    * after the old one is lost or broken.
    *
    * All or nothing: it runs in one transaction, so a bad file leaves the
    * current data untouched. Only columns this version of the app knows are
    * copied, so a backup from an older version restores too.
    *
-   * ponytail: one insert per row through the plugin bridge — a few seconds
+   * ponytail: one insert per row through the plugin bridge, a few seconds
    * for a year of a small shop's trade; batch with executeSet if it grows.
    */
   async restoreAllTables(dump) {
