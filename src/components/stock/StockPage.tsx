@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
@@ -17,6 +15,14 @@ import CircularProgress from "@mui/material/CircularProgress";
 import api from "../../api";
 import { toast } from "../../toast/useToast";
 import AdjustStockDialog from "./AdjustStockDialog";
+import StatCard from "../dashboard/StatCard";
+import { stagger } from "../../theme/motion";
+import { useTheme } from "@mui/material/styles";
+import SavingsIcon from "@mui/icons-material/SavingsRounded";
+import SellIcon from "@mui/icons-material/SellRounded";
+import WarningAmberIcon from "@mui/icons-material/WarningAmberRounded";
+import NorthIcon from "@mui/icons-material/NorthRounded";
+import SouthIcon from "@mui/icons-material/SouthRounded";
 import { money } from "../../money";
 
 interface StockRow {
@@ -48,6 +54,7 @@ interface AdjustmentRow {
 
 
 export default function StockPage() {
+  const theme = useTheme();
   const [tab, setTab] = useState(0);
   const [rows, setRows] = useState<StockRow[]>([]);
   const [totals, setTotals] = useState({ cost: 0, retail: 0, units: 0 });
@@ -105,37 +112,22 @@ export default function StockPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Typography variant="h5">Stock</Typography>
-
-      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-        <Card sx={{ flex: "1 1 160px" }}>
-          <CardContent>
-            <Typography variant="body2" color="text.secondary">
-              Value at cost
-            </Typography>
-            <Typography variant="h6" data-testid="stock-value-cost">
-              {money(totals.cost)}
-            </Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ flex: "1 1 160px" }}>
-          <CardContent>
-            <Typography variant="body2" color="text.secondary">
-              Value at retail
-            </Typography>
-            <Typography variant="h6">{money(totals.retail)}</Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ flex: "1 1 160px" }}>
-          <CardContent>
-            <Typography variant="body2" color="text.secondary">
-              Needs reordering
-            </Typography>
-            <Typography variant="h6" data-testid="stock-low-count">
-              {lowCount}
-            </Typography>
-          </CardContent>
-        </Card>
+      <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" } }}>
+        <StatCard index={0} label="Value at cost" value={totals.cost} format={money} icon={<SavingsIcon />} color={theme.palette.primary.main} hint={`${totals.units} units on hand`} />
+        <StatCard index={1} label="Value at retail" value={totals.retail} format={money} icon={<SellIcon />} color={theme.palette.secondary.main} hint={`${money(totals.retail - totals.cost)} margin`} />
+        <StatCard
+          index={2}
+          label="Needs reordering"
+          value={lowCount}
+          icon={<WarningAmberIcon />}
+          color={lowCount > 0 ? theme.palette.warning.main : theme.palette.text.secondary}
+          hint={lowCount > 0 ? "At or below reorder level" : "All above reorder level"}
+        />
+      </Box>
+      {/* Read by tests; the tiles above count up to these. */}
+      <Box className="sr-only">
+        <span data-testid="stock-value-cost">{money(totals.cost)}</span>
+        <span data-testid="stock-low-count">{lowCount}</span>
       </Box>
 
       <Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable">
@@ -152,7 +144,7 @@ export default function StockPage() {
             size="small"
             fullWidth
           />
-          <Box sx={{ overflowX: "auto" }}>
+          <Box sx={{ overflowX: "auto", bgcolor: "background.paper", borderRadius: "18px", border: 1, borderColor: "divider" }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -164,12 +156,12 @@ export default function StockPage() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filtered.map((row) => {
+                {filtered.map((row, index) => {
                   const low =
                     row.reorder_level !== null &&
                     Number(row.stock_qty) <= Number(row.reorder_level);
                   return (
-                    <TableRow key={row.id} hover>
+                    <TableRow key={row.id} hover className="pos-enter" sx={{ animationDelay: stagger(index, 20, 15) }}>
                       <TableCell>
                         <Typography variant="body2">{row.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -214,7 +206,7 @@ export default function StockPage() {
       )}
 
       {tab === 1 && (
-        <Box sx={{ overflowX: "auto" }}>
+        <Box sx={{ overflowX: "auto", bgcolor: "background.paper", borderRadius: "18px", border: 1, borderColor: "divider" }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -239,13 +231,13 @@ export default function StockPage() {
                     ) : null}
                   </TableCell>
                   <TableCell align="right">
-                    <Typography
-                      variant="body2"
-                      color={Number(row.qty_change) < 0 ? "error.main" : "success.main"}
-                    >
-                      {Number(row.qty_change) > 0 ? "+" : ""}
-                      {row.qty_change} {row.unit}
-                    </Typography>
+                    <Chip
+                      size="small"
+                      icon={Number(row.qty_change) < 0 ? <SouthIcon /> : <NorthIcon />}
+                      color={Number(row.qty_change) < 0 ? "error" : "success"}
+                      variant="outlined"
+                      label={`${Number(row.qty_change) > 0 ? "+" : ""}${row.qty_change} ${row.unit}`}
+                    />
                   </TableCell>
                   <TableCell align="right">{row.qty_after}</TableCell>
                 </TableRow>
