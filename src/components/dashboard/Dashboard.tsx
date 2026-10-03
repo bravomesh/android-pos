@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import Box from "@mui/material/Box";
@@ -18,6 +18,10 @@ import PointOfSaleIcon from "@mui/icons-material/PointOfSaleRounded";
 import MoveToInboxIcon from "@mui/icons-material/MoveToInboxRounded";
 import AddBoxIcon from "@mui/icons-material/AddBoxRounded";
 import CheckCircleIcon from "@mui/icons-material/CheckCircleRounded";
+import ChildFriendlyIcon from "@mui/icons-material/ChildFriendlyRounded";
+import CircularProgress from "@mui/material/CircularProgress";
+import { isShopEmpty, loadSampleShop } from "../../services/demo/sampleShop";
+import { toast } from "../../toast/useToast";
 
 import StatCard from "./StatCard";
 import RangePicker, { computeRange, DateRange } from "./RangePicker";
@@ -49,6 +53,70 @@ function Panel({ title, action, children, index }: { title: string; action?: Rea
         </Box>
         {children}
       </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * Shown only while the shop has no products: try the app with a sample
+ * baby shop, or start on the real stock.
+ */
+function GetStarted({ onLoaded }: { onLoaded: () => void }) {
+  const navigate = useNavigate();
+  const user = useSelector(selectUser);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setBusy(true);
+    try {
+      const s = await loadSampleShop(user?.id ?? null);
+      toast.success(`Sample baby shop loaded: ${s.products} products, ${s.sales} sales`);
+      onLoaded();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not load the sample");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="pos-enter" sx={{ p: { xs: 2.5, sm: 3 }, display: "flex", gap: 2.5, alignItems: "center", flexWrap: "wrap" }}>
+      <Box
+        aria-hidden
+        sx={(theme) => ({
+          width: 64,
+          height: 64,
+          borderRadius: "20px",
+          display: "grid",
+          placeItems: "center",
+          flexShrink: 0,
+          color: "secondary.main",
+          bgcolor: alpha(theme.palette.secondary.main, 0.12),
+        })}
+      >
+        <ChildFriendlyIcon sx={{ fontSize: 34 }} />
+      </Box>
+      <Box sx={{ flex: "1 1 260px" }}>
+        <Typography variant="h6">Your shop is empty</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Load a sample baby shop to explore — products, suppliers, customers and a week of sales — or start
+          with your own products. The sample can only be loaded while the shop is empty.
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={load}
+          disabled={busy}
+          startIcon={busy ? <CircularProgress size={18} color="inherit" /> : <ChildFriendlyIcon />}
+          data-testid="load-sample"
+        >
+          {busy ? "Loading…" : "Load sample baby shop"}
+        </Button>
+        <Button variant="outlined" onClick={() => navigate("/products/new")} disabled={busy}>
+          Add my first product
+        </Button>
+      </Box>
     </Card>
   );
 }
@@ -98,7 +166,12 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const user = useSelector(selectUser);
   const [range, setRange] = useState<DateRange>(() => computeRange("7d"));
-  const { loading, metrics, trend, topProducts, profitLoss, expenseByType, lowStock, todaySales } = useDashboardData(range);
+  const { loading, metrics, trend, topProducts, profitLoss, expenseByType, lowStock, todaySales, reload } = useDashboardData(range);
+  const [empty, setEmpty] = useState(false);
+
+  useEffect(() => {
+    isShopEmpty().then(setEmpty).catch(() => setEmpty(false));
+  }, []);
 
   const sales = metrics?.totalSales ?? 0;
   const count = metrics?.totalTransactions ?? 0;
@@ -192,6 +265,15 @@ export default function Dashboard() {
           </Box>
         </Box>
       </Box>
+
+      {empty && (
+        <GetStarted
+          onLoaded={() => {
+            setEmpty(false);
+            reload();
+          }}
+        />
+      )}
 
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5 }}>
         <Typography variant="h6">How the shop is doing</Typography>
