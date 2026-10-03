@@ -15,6 +15,7 @@ import ProductTypeFormPage from "../products/ProductTypeFormPage";
 import VendorsPage from "../vendor/VendorsPage";
 import VendorFormPage from "../vendor/VendorFormPage";
 import SalePage from "../sale/SalePage";
+import SalesHistoryPage from "../sales/SalesHistoryPage";
 import NotFound from "../notFound/NotFound";
 import BackupAdminPanel from "../backup/BackupAdminPanel";
 import Dashboard from "../dashboard/Dashboard";
@@ -31,6 +32,7 @@ const Routes = () => (
 
     {/* Sale */}
     <Route path="/sale" element={<SalePage />} />
+    <Route path="/sales" element={<SalesHistoryPage />} />
 
     {/* Receivings */}
     <Route path="/receivings" element={<ReceivingsPage />} />

@@ -299,6 +299,11 @@ export const transactionApi = {
     return wrapResponse(sales);
   },
 
+  getSales: async (startDate, endDate) => {
+    const sales = await SalesService.getTransactionsByDateRange(startDate, endDate);
+    return wrapResponse(sales);
+  },
+
   /**
    * Completes the counter sale started by getTransactionId().
    *

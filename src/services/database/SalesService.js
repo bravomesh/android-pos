@@ -483,19 +483,21 @@ class SalesService {
   }
 
   /**
-   * Get transactions by date range
+   * Completed and reversed sales in a date range, newest first, with how
+   * many items each one had — the list a shopkeeper picks a sale from.
    */
   async getTransactionsByDateRange(startDate, endDate) {
     const transactions = await db.query(
       `SELECT
         th.*,
-        c.name as customer_name
+        c.name as customer_name,
+        (SELECT COALESCE(SUM(qty), 0) FROM transaction_details
+          WHERE transaction_id = th.id) as items_count
       FROM transaction_headers th
       LEFT JOIN customers c ON th.customer_id = c.id
       WHERE ${localDayOf('th.created_at')} BETWEEN ? AND ?
-        AND th.transaction_status = 'Done'
-        AND th.is_active = 1
-      ORDER BY th.created_at DESC`,
+        AND th.transaction_status IN ('Done', 'Reversed')
+      ORDER BY th.created_at DESC, th.id DESC`,
       [startDate, endDate]
     );
 

@@ -81,7 +81,12 @@ const transaction = {
   updateCart: (transactionId, item) => transactionApi.updateCart(transactionId, item),
   removeFromCart: (transactionId, productId) => transactionApi.removeFromCart(transactionId, productId),
   checkoutCounterSale: (transactionId, data) => transactionApi.checkoutCounterSale(transactionId, data),
-  checkoutCreditSale: (transactionId, data) => transactionApi.checkoutCreditSale(transactionId, data)
+  checkoutCreditSale: (transactionId, data) => transactionApi.checkoutCreditSale(transactionId, data),
+  getSales: (startDate, endDate) => transactionApi.getSales(startDate, endDate),
+  getSale: (id) => transactionApi.getTransaction(id),
+  // Returns and mistakes: puts the goods back and takes any debt off the
+  // customer's account. The sale stays on record, marked Reversed.
+  reverseSale: (id) => transactionApi.deleteSale(id)
 };
 
 const user = {
