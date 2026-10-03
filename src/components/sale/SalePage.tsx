@@ -206,7 +206,7 @@ export default function SalePage() {
                   color={selected ? "primary" : "default"}
                   variant={selected ? "filled" : "outlined"}
                   onClick={() => handleTypeSelect(t.id)}
-                  sx={{ minHeight: 40, px: 0.5, animationDelay: stagger(i, 30), flexShrink: 0, bgcolor: selected ? undefined : "background.paper" }}
+                  sx={{ minHeight: 48, px: 0.5, animationDelay: stagger(i, 30), flexShrink: 0, bgcolor: selected ? undefined : "background.paper" }}
                 />
               );
             })}

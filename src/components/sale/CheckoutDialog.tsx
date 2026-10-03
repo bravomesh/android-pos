@@ -339,7 +339,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
                     color={Number(amountPaid) === value ? "primary" : "default"}
                     variant={Number(amountPaid) === value ? "filled" : "outlined"}
                     className="pos-enter"
-                    sx={{ minHeight: 40, minWidth: 64, animationDelay: `${i * 40}ms` }}
+                    sx={{ minHeight: 48, minWidth: 72, animationDelay: `${i * 40}ms` }}
                   />
                 ))}
               </Box>

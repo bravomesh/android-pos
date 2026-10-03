@@ -22,6 +22,11 @@ import { logout } from '../../actions/auth';
 import BackupScheduler from '../../services/backup/BackupScheduler';
 import { todayLocalISO, yesterdayLocalISO } from '../../services/backup/dateUtils';
 import { toast } from '../../toast/useToast';
+import CloudDoneIcon from '@mui/icons-material/CloudDoneRounded';
+import CloudOffIcon from '@mui/icons-material/CloudOffRounded';
+import CloudQueueIcon from '@mui/icons-material/CloudQueueRounded';
+import CloudUploadIcon from '@mui/icons-material/CloudUploadRounded';
+import SettingsBackupRestoreIcon from '@mui/icons-material/SettingsBackupRestoreRounded';
 
 class BackupAdminPanel extends Component {
   state = {
@@ -89,75 +94,97 @@ class BackupAdminPanel extends Component {
 
   render() {
     const { date, busy, rows, lastResult, restoreFile, restoring } = this.state;
+    const latest = rows[0];
+    const healthy = latest && latest.status === 'success';
+
     return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Backup Admin
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Today: {todayLocalISO(new Date())} — yesterday:{' '}
-          {yesterdayLocalISO(new Date())}
-        </Typography>
-
-        <Card variant="outlined" sx={{ mb: 3 }}>
-          <CardContent>
-            <Stack
-              direction="row"
-              spacing={2}
-              sx={{ alignItems: 'center', flexWrap: 'wrap' }}
-            >
-              <TextField
-                type="date"
-                label="Backup date"
-                size="small"
-                value={date}
-                onChange={this.handleDate}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-              <Button
-                variant="contained"
-                onClick={this.handleRun}
-                disabled={busy}
-              >
-                {busy ? 'Running…' : 'Re-run backup for this date'}
-              </Button>
-            </Stack>
-            {lastResult && (
-              <Alert
-                severity={lastResult.ok ? 'success' : 'error'}
-                sx={{ mt: 2 }}
-              >
-                {lastResult.ok
-                  ? `Success — wrote ${lastResult.pdfUri}`
-                  : `Failed — ${lastResult.error}`}
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card variant="outlined" sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="subtitle1" gutterBottom>
-              Restore from a backup
+      <Box sx={{ display: 'grid', gap: 2.5, maxWidth: 960, mx: 'auto' }}>
+        {/* Status first: is the shop's data safe right now? */}
+        <Box
+          className="pos-enter"
+          sx={(theme) => ({
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            p: 3,
+            borderRadius: '22px',
+            color: '#fff',
+            background: healthy
+              ? 'linear-gradient(125deg, #065F46, #047857 55%, #0F766E)'
+              : latest
+                ? `linear-gradient(125deg, #991B1B, ${theme.palette.error.main})`
+                : 'linear-gradient(125deg, #334155, #475569)',
+          })}
+        >
+          <Box sx={{ width: 56, height: 56, borderRadius: '18px', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,.16)', flexShrink: 0 }}>
+            {healthy ? <CloudDoneIcon fontSize="large" /> : latest ? <CloudOffIcon fontSize="large" /> : <CloudQueueIcon fontSize="large" />}
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="h6" sx={{ color: '#fff' }}>
+              {healthy ? 'Backed up' : latest ? 'The last backup failed' : 'No backup yet'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Use this to move the shop onto a new tablet: choose a
-              <code> …-pos-backup.json </code> file. Everything on this tablet is
-              replaced by what is in the file. A copy of the current data is
-              saved first.
+            <Typography variant="body2" sx={{ opacity: 0.85 }}>
+              {latest
+                ? `Last run for ${latest.date}${latest.error_message ? ` — ${latest.error_message}` : ''}`
+                : 'The first one runs tonight at 00:30, or start one below.'}
             </Typography>
-            <Button variant="outlined" component="label" disabled={restoring} data-testid="restore-btn">
-              {restoring ? 'Restoring…' : 'Choose backup file'}
-              <input
-                hidden
-                type="file"
-                accept="application/json,.json"
-                onChange={this.handleRestoreFile}
-                data-testid="restore-input"
-              />
-            </Button>
-          </CardContent>
-        </Card>
+            <Typography variant="caption" sx={{ opacity: 0.75 }}>
+              Files go to Documents/POS/Daily — copy them off the tablet regularly.
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' } }}>
+          <Card className="pos-enter" sx={{ animationDelay: '60ms' }}>
+            <CardContent sx={{ display: 'grid', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <CloudUploadIcon color="primary" />
+                <Typography variant="h6">Back up a day</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Writes that day's sales report (PDF) and a full copy of the data. Yesterday is{' '}
+                {yesterdayLocalISO(new Date())}; today is {todayLocalISO(new Date())}.
+              </Typography>
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 1.5 }}>
+                <TextField
+                  type="date"
+                  label="Day"
+                  size="small"
+                  value={date}
+                  onChange={this.handleDate}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+                <Button variant="contained" onClick={this.handleRun} disabled={busy} sx={{ minHeight: 48 }}>
+                  {busy ? 'Backing up…' : 'Back up now'}
+                </Button>
+              </Stack>
+              {lastResult && (
+                <Alert severity={lastResult.ok ? 'success' : 'error'} className="pos-enter">
+                  {lastResult.ok ? `Saved ${lastResult.pdfUri}` : `Failed — ${lastResult.error}`}
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="pos-enter" sx={{ animationDelay: '120ms' }}>
+            <CardContent sx={{ display: 'grid', gap: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <SettingsBackupRestoreIcon color="secondary" />
+                <Typography variant="h6">Restore from a backup</Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Moving the shop onto a new tablet? Choose a <code>…-pos-backup.json</code> file. Everything here is
+                replaced by what is in the file, and a copy of the current data is saved first.
+              </Typography>
+              <Box>
+                <Button variant="outlined" color="secondary" component="label" disabled={restoring} data-testid="restore-btn" sx={{ minHeight: 48 }}>
+                  {restoring ? 'Restoring…' : 'Choose backup file'}
+                  <input hidden type="file" accept="application/json,.json" onChange={this.handleRestoreFile} data-testid="restore-input" />
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
 
         <ConfirmDialog
           open={!!restoreFile}
@@ -172,34 +199,32 @@ class BackupAdminPanel extends Component {
           onCancel={() => this.setState({ restoreFile: null })}
         />
 
-        <Card variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Exported At</TableCell>
-                <TableCell>PDF</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.date}>
-                  <TableCell>{r.date}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={r.status}
-                      color={r.status === 'success' ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>{r.exported_at}</TableCell>
-                  <TableCell>{r.pdf_path}</TableCell>
+        {rows.length > 0 && (
+          <Card className="pos-enter" sx={{ animationDelay: '180ms', overflowX: 'auto' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Day</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Ran at</TableCell>
+                  <TableCell>Report</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
+              </TableHead>
+              <TableBody>
+                {rows.map((r) => (
+                  <TableRow key={r.date}>
+                    <TableCell>{r.date}</TableCell>
+                    <TableCell>
+                      <Chip label={r.status === 'success' ? 'Saved' : 'Failed'} color={r.status === 'success' ? 'success' : 'error'} size="small" />
+                    </TableCell>
+                    <TableCell>{new Date(r.exported_at).toLocaleString()}</TableCell>
+                    <TableCell sx={{ wordBreak: 'break-all' }}>{r.pdf_path}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )}
       </Box>
     );
   }
