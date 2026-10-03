@@ -15,8 +15,8 @@ export function msUntilNext0030(now = new Date()) {
     now.getMonth(),
     now.getDate(),
     0,
-    0,
-    30
+    30,
+    0
   );
   if (target.getTime() <= now.getTime()) {
     target.setDate(target.getDate() + 1);

@@ -8,6 +8,13 @@ const exportRepository = {
     return rows[0] || null;
   },
 
+  async getLatestSuccess() {
+    const rows = await db.query(
+      "SELECT * FROM daily_exports WHERE status = 'success' ORDER BY date DESC LIMIT 1"
+    );
+    return rows[0] || null;
+  },
+
   async getByDate(date) {
     const rows = await db.query(
       'SELECT * FROM daily_exports WHERE date = ?',

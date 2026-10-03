@@ -16,12 +16,18 @@ function nextIsoDay(iso) {
   return `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
 }
 
+/**
+ * Export every day since the last one that succeeded, up to yesterday.
+ *
+ * Counting from the last success, not the last attempt, means a day whose
+ * export failed is tried again, and the days after a failure are not
+ * skipped (starting from yesterday whenever the latest row was an error
+ * used to leave every day in between without a backup).
+ */
 async function catchUp() {
   const target = yesterdayLocalISO(new Date());
-  const latest = await exportRepository.getLatest();
-  const startFrom = latest && latest.status === 'success'
-    ? nextIsoDay(latest.date)
-    : target;
+  const lastGood = await exportRepository.getLatestSuccess();
+  const startFrom = lastGood ? nextIsoDay(lastGood.date) : target;
 
   let cursor = startFrom;
   while (cursor && cursor <= target) {
@@ -72,7 +78,9 @@ const BackupScheduler = {
 
   async runManual(date) {
     return BackupService.generateExport(date);
-  }
+  },
+
+  catchUp
 };
 
 export default BackupScheduler;
