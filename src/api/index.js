@@ -71,7 +71,10 @@ const customer = {
   receivePayment: (id, amount) => customersApi.receivePayment(id, amount)
 };
 
-const vendor = buildEntity(vendorsApi);
+const vendor = {
+  ...buildEntity(vendorsApi),
+  payVendor: (id, amount) => vendorsApi.payVendor(id, amount)
+};
 
 const receiving = buildEntity(receivingsApi);
 

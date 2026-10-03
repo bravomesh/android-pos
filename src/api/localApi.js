@@ -241,6 +241,11 @@ const vendorsApiBase = {
   delete: async (id) => {
     const result = await VendorsService.deleteVendor(id);
     return wrapResponse(result);
+  },
+
+  payVendor: async (id, amount) => {
+    const result = await VendorsService.payVendor(id, amount);
+    return wrapResponse(result);
   }
 };
 

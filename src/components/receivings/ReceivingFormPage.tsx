@@ -9,15 +9,16 @@ const BASE_FIELDS: FieldDef[] = [
   { name: "vendorId", label: "Vendor", type: "select", options: [] },
   { name: "qty", label: "Qty", type: "number", required: true },
   { name: "price", label: "Price", type: "money" },
-  // `paid` is collected for parity with the legacy form but is not persisted anywhere —
-  // ReceivingsService.createReceiving/updateReceiving never read data.paid, and the
-  // `receivings` table has no `paid` column (only `price` + `payed_at`). Pre-existing
-  // no-op, kept here rather than silently dropping a field the legacy screen exposed.
-  { name: "paid", label: "Enter amount Paid", type: "money" },
+  {
+    name: "amountPaid",
+    label: "Amount paid to supplier",
+    type: "money",
+    helperText: "Leave blank if paid in full. Enter less, or 0, for stock taken on credit.",
+  },
   { name: "date", label: "Received At", type: "date" },
 ];
 
-const EMPTY = { productId: "", vendorId: "", qty: "", price: "", paid: "", date: "" };
+const EMPTY = { productId: "", vendorId: "", qty: "", price: "", amountPaid: "", date: "" };
 
 export default function ReceivingFormPage() {
   const { id } = useParams();
@@ -58,7 +59,7 @@ export default function ReceivingFormPage() {
           vendorId: r.vendor_id ?? "",
           qty: r.qty ?? "",
           price: r.price ?? "",
-          paid: "",
+          amountPaid: r.amount_paid ?? "",
           date: (r.payed_at || "").slice(0, 10),
         });
       }
@@ -72,6 +73,7 @@ export default function ReceivingFormPage() {
       vendorId: values.vendorId || null,
       qty: Number(values.qty) || 0,
       price: Number(values.price) || 0,
+      amountPaid: values.amountPaid === "" ? undefined : Number(values.amountPaid),
       payedAt: values.date || undefined,
     };
     if (isEdit && id) {

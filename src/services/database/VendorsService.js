@@ -12,15 +12,19 @@ class VendorsService {
     const { page = 1, limit = 50, search = '' } = options;
     const offset = (page - 1) * limit;
 
-    let sql = 'SELECT * FROM vendors';
+    // What the shop still owes each supplier for deliveries bought on credit.
+    let sql = `SELECT v.*,
+        COALESCE((SELECT SUM(r.qty * r.price - COALESCE(r.amount_paid, r.qty * r.price))
+                  FROM receivings r WHERE r.vendor_id = v.id), 0) as owed
+      FROM vendors v`;
     const params = [];
 
     if (search) {
-      sql += ' WHERE name LIKE ? OR mobile LIKE ? OR email LIKE ?';
+      sql += ' WHERE v.name LIKE ? OR v.mobile LIKE ? OR v.email LIKE ?';
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    sql += ' ORDER BY name';
+    sql += ' ORDER BY v.name';
     sql += ` LIMIT ${limit} OFFSET ${offset}`;
 
     const vendors = await db.query(sql, params);
@@ -102,6 +106,46 @@ class VendorsService {
     );
 
     return this.getVendorById(id);
+  }
+
+  /**
+   * Record paying a supplier what the shop owes them. The payment is put
+   * against their unpaid deliveries oldest first, so each receiving shows
+   * what is still owed on it.
+   *
+   * ponytail: no separate payment ledger, so the date of each supplier
+   * payment is not kept; add a vendor_payments table if that is needed.
+   */
+  async payVendor(vendorId, amount) {
+    const payment = Math.round(Number(amount) * 100) / 100;
+    if (!Number.isFinite(payment) || payment <= 0) {
+      throw new Error('Enter the amount paid');
+    }
+
+    return db.withTransaction(async () => {
+      const unpaid = await db.query(
+        `SELECT id, qty * price - COALESCE(amount_paid, qty * price) as owed, amount_paid
+         FROM receivings
+         WHERE vendor_id = ? AND qty * price - COALESCE(amount_paid, qty * price) > 0.005
+         ORDER BY payed_at ASC, id ASC`,
+        [vendorId]
+      );
+      const owed = unpaid.reduce((sum, r) => sum + r.owed, 0);
+      if (payment > owed + 0.005) {
+        throw new Error(`That is more than the ${owed} owed to this supplier`);
+      }
+
+      let remaining = payment;
+      const now = new Date().toISOString();
+      for (const row of unpaid) {
+        if (remaining <= 0.005) break;
+        const applied = Math.min(remaining, row.owed);
+        await db.run('UPDATE receivings SET amount_paid = amount_paid + ?, updated_at = ? WHERE id = ?', [applied, now, row.id]);
+        remaining -= applied;
+      }
+
+      return { vendorId, owed: Math.round((owed - payment) * 100) / 100 };
+    });
   }
 
   /**

@@ -6,6 +6,18 @@ import db from './DatabaseService';
 import { localDay } from './businessDay';
 import ProductsService from './ProductsService';
 
+/**
+ * What was paid to the supplier on a delivery. Blank means paid in full;
+ * less than the total means the rest was bought on credit.
+ */
+const paidFor = (amountPaid, total) => {
+  if (amountPaid === undefined || amountPaid === null || amountPaid === '') return total;
+  const paid = Number(amountPaid);
+  if (!Number.isFinite(paid) || paid < 0) throw new Error('Enter what was paid to the supplier');
+  if (paid > total + 0.005) throw new Error('The amount paid is more than the delivery cost');
+  return paid;
+};
+
 class ReceivingsService {
   /**
    * Get all receivings with optional pagination
@@ -18,7 +30,8 @@ class ReceivingsService {
       `SELECT
         r.*,
         p.name as product_name,
-        v.name as vendor_name
+        v.name as vendor_name,
+        r.qty * r.price - COALESCE(r.amount_paid, r.qty * r.price) as owed
       FROM receivings r
       LEFT JOIN products p ON r.product_id = p.id
       LEFT JOIN vendors v ON r.vendor_id = v.id
@@ -48,7 +61,8 @@ class ReceivingsService {
       `SELECT
         r.*,
         p.name as product_name,
-        v.name as vendor_name
+        v.name as vendor_name,
+        r.qty * r.price - COALESCE(r.amount_paid, r.qty * r.price) as owed
       FROM receivings r
       LEFT JOIN products p ON r.product_id = p.id
       LEFT JOIN vendors v ON r.vendor_id = v.id
@@ -72,6 +86,8 @@ class ReceivingsService {
       throw new Error('Enter how many were received');
     }
 
+    const amountPaid = paidFor(data.amountPaid, qty * (Number(data.price) || 0));
+
     const product = await ProductsService.getProductById(data.productId);
     if (!product) {
       throw new Error('Product not found');
@@ -79,9 +95,9 @@ class ReceivingsService {
 
     return db.withTransaction(async () => {
       const result = await db.run(
-        `INSERT INTO receivings (product_id, vendor_id, qty, price, payed_at, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [data.productId, data.vendorId || null, qty, data.price || 0, payedAt, now, now]
+        `INSERT INTO receivings (product_id, vendor_id, qty, price, amount_paid, payed_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [data.productId, data.vendorId || null, qty, data.price || 0, amountPaid, payedAt, now, now]
       );
 
       await ProductsService.incrementStock(data.productId, qty);
@@ -123,6 +139,13 @@ class ReceivingsService {
       throw new Error('Enter how many were received');
     }
 
+    const total = qty * (Number(data.price) || 0);
+    // Left blank when editing, the amount already paid stays (capped at the new total).
+    const amountPaid =
+      data.amountPaid === undefined || data.amountPaid === null || data.amountPaid === ''
+        ? Math.min(original.amount_paid ?? total, total)
+        : paidFor(data.amountPaid, total);
+
     return db.withTransaction(async () => {
       if (String(productId) === String(original.product_id)) {
         const difference = qty - original.qty;
@@ -139,10 +162,11 @@ class ReceivingsService {
           vendor_id = ?,
           qty = ?,
           price = ?,
+          amount_paid = ?,
           payed_at = ?,
           updated_at = ?
         WHERE id = ?`,
-        [productId, data.vendorId || null, qty, data.price || 0, data.payedAt || original.payed_at, now, id]
+        [productId, data.vendorId || null, qty, data.price || 0, amountPaid, data.payedAt || original.payed_at, now, id]
       );
 
       return this.getReceivingById(id);
@@ -173,7 +197,8 @@ class ReceivingsService {
       `SELECT
         r.*,
         p.name as product_name,
-        v.name as vendor_name
+        v.name as vendor_name,
+        r.qty * r.price - COALESCE(r.amount_paid, r.qty * r.price) as owed
       FROM receivings r
       LEFT JOIN products p ON r.product_id = p.id
       LEFT JOIN vendors v ON r.vendor_id = v.id

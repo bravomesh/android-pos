@@ -264,6 +264,7 @@ class DatabaseService {
         vendor_id INTEGER,
         qty REAL NOT NULL DEFAULT 0,
         price REAL NOT NULL DEFAULT 0,
+        amount_paid REAL,
         payed_at TEXT DEFAULT CURRENT_TIMESTAMP,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -326,6 +327,9 @@ class DatabaseService {
     await addColumn('products', 'unit', "TEXT NOT NULL DEFAULT 'pcs'");
     await addColumn('products', 'reorder_level', 'REAL');
     await addColumn('products', 'track_stock', 'INTEGER NOT NULL DEFAULT 1');
+    // What was paid to the supplier for a delivery. NULL means paid in full:
+    // deliveries booked before this existed had no way to record credit.
+    await addColumn('receivings', 'amount_paid', 'REAL');
 
     // Older installs stored no stock row for products created before the
     // stock table was populated on insert; backfill so they are countable.
@@ -554,7 +558,7 @@ class DatabaseService {
    */
   async restoreAllTables(dump) {
     if (!dump || dump.format !== 'mobile-pos-backup' || !dump.tables || typeof dump.tables !== 'object') {
-      throw new Error('This is not a Mobile POS backup file');
+      throw new Error('This is not a backup file from this app');
     }
     if (dump.version !== 1) {
       throw new Error(`This backup was made by a newer version of the app (format ${dump.version})`);

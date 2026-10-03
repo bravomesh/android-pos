@@ -80,7 +80,11 @@ export default function CustomersPage() {
         }
       />
       <TakePaymentDialog
-        customer={paying}
+        party={paying && { id: paying.id, name: paying.name, owed: paying.outstanding_balance }}
+        title={(name) => `Payment from ${name}`}
+        pay={async (id, amount) => (await api.customer.receivePayment(id, amount)).data.balance}
+        done={(name, left) => `Payment taken. ${name} now owes ${left}`}
+        confirmLabel="Take payment"
         onClose={() => setPaying(null)}
         onSaved={() => {
           setPaying(null);

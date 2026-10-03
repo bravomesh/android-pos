@@ -11,6 +11,7 @@ interface ReceivingRow {
   vendor_name: string | null;
   qty: number;
   price: number;
+  owed: number;
 }
 
 const columns: ColumnDef<ReceivingRow>[] = [
@@ -18,7 +19,8 @@ const columns: ColumnDef<ReceivingRow>[] = [
   { key: "product_name", label: "Product", primary: true },
   { key: "vendor_name", label: "Vendor", secondary: true },
   { key: "qty", label: "Qty" },
-  { key: "price", label: "Price", render: (row) => money(row.price) },
+  { key: "price", label: "Unit cost", render: (row) => money(row.price) },
+  { key: "owed", label: "Still owed", render: (row) => (row.owed > 0 ? money(row.owed) : "Paid") },
 ];
 
 export default function ReceivingsPage() {
