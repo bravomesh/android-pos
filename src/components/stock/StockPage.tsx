@@ -14,10 +14,10 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
-import currency from "currency.js";
 import api from "../../api";
 import { toast } from "../../toast/useToast";
 import AdjustStockDialog from "./AdjustStockDialog";
+import { money } from "../../money";
 
 interface StockRow {
   id: number;
@@ -45,7 +45,6 @@ interface AdjustmentRow {
   created_at: string;
 }
 
-const money = (value: number) => currency(value || 0).format();
 
 export default function StockPage() {
   const [tab, setTab] = useState(0);

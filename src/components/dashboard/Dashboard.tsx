@@ -18,6 +18,7 @@ import SalesTrendChart from "./charts/SalesTrendChart";
 import TopProductsChart from "./charts/TopProductsChart";
 import ProfitMarginChart from "./charts/ProfitMarginChart";
 import ExpenseBreakdownChart from "./charts/ExpenseBreakdownChart";
+import { money } from "../../money";
 
 export default function Dashboard() {
   const theme = useTheme();
@@ -48,7 +49,7 @@ export default function Dashboard() {
         <Grid size={{ xs: 6, sm: 3 }}>
           <StatCard
             label="Sales"
-            value={(metrics?.totalSales ?? 0).toLocaleString()}
+            value={money(metrics?.totalSales)}
             icon={<PaidIcon />}
             color={theme.palette.primary.main}
           />
@@ -56,7 +57,7 @@ export default function Dashboard() {
         <Grid size={{ xs: 6, sm: 3 }}>
           <StatCard
             label="Profit"
-            value={netProfit.toLocaleString()}
+            value={money(netProfit)}
             icon={<TrendingUpIcon />}
             color={netProfit >= 0 ? theme.palette.success.main : theme.palette.error.main}
           />

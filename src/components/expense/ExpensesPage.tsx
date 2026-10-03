@@ -4,6 +4,7 @@ import Button from "@mui/material/Button";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
+import { money } from "../../money";
 
 interface ExpenseRow {
   id: number;
@@ -16,7 +17,7 @@ interface ExpenseRow {
 const columns: ColumnDef<ExpenseRow>[] = [
   { key: "id", label: "ID" },
   { key: "description", label: "Description", primary: true },
-  { key: "amount", label: "Amount" },
+  { key: "amount", label: "Amount", render: (row) => money(row.amount) },
   { key: "spent_at", label: "Spent At" },
   { key: "expense_type_name", label: "Type", secondary: true },
 ];

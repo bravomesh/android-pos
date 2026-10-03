@@ -4,9 +4,9 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
-import currency from "currency.js";
 import { SaleProduct } from "./useSaleProducts";
 import { toast } from "../../toast/useToast";
+import { money } from "../../money";
 
 export interface ProductGridProps {
   products: SaleProduct[];
@@ -64,7 +64,7 @@ export default function ProductGrid({ products, onAdd, loading }: ProductGridPro
                   {product.name}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {currency(product.selling_price).format()}
+                  {money(product.selling_price)}
                 </Typography>
                 <Box sx={{ mt: "auto" }}>
                   <Chip

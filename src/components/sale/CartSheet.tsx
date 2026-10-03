@@ -10,12 +10,12 @@ import Divider from "@mui/material/Divider";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteIcon from "@mui/icons-material/Delete";
-import currency from "currency.js";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { getCartItemsArraySelector } from "../../selectors";
 import { updateCartItem, removeItemFromCart, updateDiscountOnTotal, updateTax } from "../../actions/cart";
 import { CartLine } from "../../reducers/cart";
+import { money } from "../../money";
 
 export interface CartSheetProps {
   open: boolean;
@@ -61,7 +61,7 @@ export default function CartSheet({ open, onClose, variant, onCharge }: CartShee
                   {line.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {currency(line.totalPrice).format()}
+                  {money(line.totalPrice)}
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -121,7 +121,7 @@ export default function CartSheet({ open, onClose, variant, onCharge }: CartShee
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
         <Typography variant="subtitle1">Net total</Typography>
         <Typography variant="subtitle1" data-testid="cart-net-total">
-          {currency(summary.netTotal).format()}
+          {money(summary.netTotal)}
         </Typography>
       </Box>
 

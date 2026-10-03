@@ -18,6 +18,7 @@ import { getCartItemsArraySelector } from "../../selectors";
 import { emptyCart } from "../../actions/cart";
 import { toast } from "../../toast/useToast";
 import api from "../../api";
+import { money } from "../../money";
 
 export interface CheckoutDialogProps {
   open: boolean;
@@ -126,7 +127,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Typography>Net total</Typography>
-            <Typography data-testid="checkout-net-total">{currency(netTotal).format()}</Typography>
+            <Typography data-testid="checkout-net-total">{money(netTotal)}</Typography>
           </Box>
 
           <ToggleButtonGroup
@@ -185,7 +186,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Typography>{salesType === "Credit" ? "Balance owing" : "Change"}</Typography>
             <Typography data-testid="checkout-change">
-              {salesType === "Credit" ? owing.format() : change.format()}
+              {salesType === "Credit" ? money(owing.value) : money(change.value)}
             </Typography>
           </Box>
         </Box>

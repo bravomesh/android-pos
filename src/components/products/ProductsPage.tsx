@@ -4,6 +4,7 @@ import Button from "@mui/material/Button";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
+import { money } from "../../money";
 
 interface ProductRow {
   id: number;
@@ -25,7 +26,7 @@ const columns: ColumnDef<ProductRow>[] = [
     secondary: true,
     render: (row) => row.sku || row.product_type_name || "—",
   },
-  { key: "selling_price", label: "Selling Price" },
+  { key: "selling_price", label: "Selling Price", render: (row) => money(row.selling_price) },
   {
     key: "stock_qty",
     label: "Stock",

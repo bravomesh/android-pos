@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import ListPage from "../crud/ListPage";
 import { ColumnDef } from "../crud/types";
 import api from "../../api";
+import { money } from "../../money";
 
 interface ReceivingRow {
   id: number;
@@ -16,7 +17,7 @@ const columns: ColumnDef<ReceivingRow>[] = [
   { key: "product_name", label: "Product", primary: true },
   { key: "vendor_name", label: "Vendor", secondary: true },
   { key: "qty", label: "Qty" },
-  { key: "price", label: "Price" },
+  { key: "price", label: "Price", render: (row) => money(row.price) },
 ];
 
 export default function ReceivingsPage() {

@@ -2,8 +2,8 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { useSelector } from "react-redux";
-import currency from "currency.js";
 import { RootState } from "../../store";
+import { money } from "../../money";
 
 export interface CartBarProps {
   onViewCart: () => void;
@@ -12,7 +12,7 @@ export interface CartBarProps {
 export default function CartBar({ onViewCart }: CartBarProps) {
   const summary = useSelector((state: RootState) => state.cart.summary);
   const itemCount = summary.noOfInividualItems;
-  const netTotal = currency(summary.netTotal).format();
+  const netTotal = money(summary.netTotal);
 
   return (
     <Box

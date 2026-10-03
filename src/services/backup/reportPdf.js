@@ -1,9 +1,8 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatDisplay } from './dateUtils';
+import { money as KES } from '../../money';
 
-const KES = (n) =>
-  `KES ${Number(n || 0).toLocaleString('en-KE', { minimumFractionDigits: 0 })}`;
 
 const formatTime = (iso) => {
   if (!iso) return '';
