@@ -84,6 +84,16 @@ const writeDataBackup = async (filename) => {
 };
 
 const BackupService = {
+  /**
+   * Copy today's data aside before a restore replaces it, so restoring the
+   * wrong file is not the end of the shop's records.
+   */
+  async saveSafetyCopy() {
+    await ensureDir(PRIMARY_DIRECTORY);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return writeDataBackup(`before-restore-${stamp}.json`);
+  },
+
   async generateExport(date) {
     const exportedAt = new Date().toISOString();
     try {

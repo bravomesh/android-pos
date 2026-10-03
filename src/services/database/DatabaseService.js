@@ -343,13 +343,13 @@ class DatabaseService {
    */
   async seedDefaultData() {
     // Check if admin user exists
-    const adminCheck = await this.db.query("SELECT * FROM users WHERE name = 'admin'");
+    const adminCheck = await this.query("SELECT id FROM users WHERE name = 'admin'");
 
-    if (adminCheck.values.length === 0) {
+    if (adminCheck.length === 0) {
       // First run: admin / admin, hashed the same way as any other password.
       // The shop is told to change it before trading (see BUILDING.md); the
       // app no longer accepts this pair once the password has been changed.
-      await this.db.run(
+      await this.run(
         'INSERT INTO users (name, password, role) VALUES (?, ?, ?)',
         ['admin', await hashPassword('admin'), 'Admin']
       );
@@ -357,9 +357,9 @@ class DatabaseService {
     }
 
     // Initialize transaction counter if not exists
-    const counterCheck = await this.db.query("SELECT * FROM transaction_id WHERE id = 1");
-    if (counterCheck.values.length === 0) {
-      await this.db.run("INSERT INTO transaction_id (id, count) VALUES (1, 0)");
+    const counterCheck = await this.query('SELECT id FROM transaction_id WHERE id = 1');
+    if (counterCheck.length === 0) {
+      await this.run('INSERT INTO transaction_id (id, count) VALUES (1, 0)');
       console.log('Transaction counter initialized');
     }
   }
@@ -538,6 +538,58 @@ class DatabaseService {
       platform: this.platform,
       tables
     };
+  }
+
+  /**
+   * Replace everything in the database with a backup made by
+   * exportAllTables() — how a shop gets its records onto a new tablet
+   * after the old one is lost or broken.
+   *
+   * All or nothing: it runs in one transaction, so a bad file leaves the
+   * current data untouched. Only columns this version of the app knows are
+   * copied, so a backup from an older version restores too.
+   *
+   * ponytail: one insert per row through the plugin bridge — a few seconds
+   * for a year of a small shop's trade; batch with executeSet if it grows.
+   */
+  async restoreAllTables(dump) {
+    if (!dump || dump.format !== 'mobile-pos-backup' || !dump.tables || typeof dump.tables !== 'object') {
+      throw new Error('This is not a Mobile POS backup file');
+    }
+    if (dump.version !== 1) {
+      throw new Error(`This backup was made by a newer version of the app (format ${dump.version})`);
+    }
+
+    await this.withTransaction(async () => {
+      for (const table of [...DatabaseService.TABLES].reverse()) {
+        await this.run(`DELETE FROM ${table}`);
+      }
+
+      for (const table of DatabaseService.TABLES) {
+        const rows = Array.isArray(dump.tables[table]) ? dump.tables[table] : [];
+        if (rows.length === 0) continue;
+
+        // Table and column names come from this app's own schema, never
+        // from the file, so they are safe to put into the SQL.
+        const known = (await this.query(`PRAGMA table_info(${table})`)).map((c) => c.name);
+        for (const row of rows) {
+          const columns = known.filter((c) => c in row);
+          if (columns.length === 0) continue;
+          await this.run(
+            `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+            columns.map((c) => row[c])
+          );
+        }
+      }
+
+      // A backup without these (or a hand-trimmed one) must still leave a
+      // working till: an admin to sign in with and a sale counter.
+      await this.seedDefaultData();
+    });
+
+    return Object.fromEntries(
+      DatabaseService.TABLES.map((t) => [t, Array.isArray(dump.tables[t]) ? dump.tables[t].length : 0])
+    );
   }
 }
 
