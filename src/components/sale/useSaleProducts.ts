@@ -15,6 +15,7 @@ export interface SaleProduct {
   barcode?: string | null;
   unit?: string | null;
   track_stock?: number;
+  reorder_level?: number | null;
 }
 
 export interface SaleProductType {

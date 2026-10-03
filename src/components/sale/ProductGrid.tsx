@@ -1,16 +1,25 @@
-import Grid from "@mui/material/Grid";
+import { MouseEvent } from "react";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import Box from "@mui/material/Box";
+import Skeleton from "@mui/material/Skeleton";
+import { alpha } from "@mui/material/styles";
+import SearchOffIcon from "@mui/icons-material/SearchOffRounded";
 import { SaleProduct } from "./useSaleProducts";
 import { toast } from "../../toast/useToast";
 import { money } from "../../money";
+import { stagger } from "../../theme/motion";
+import EmptyState from "../motion/EmptyState";
+import { initials, tileGradient } from "./productLook";
+import { flyToCart } from "./flyToCart";
 
 export interface ProductGridProps {
   products: SaleProduct[];
-  onAdd: (product: SaleProduct) => void;
+  /** Returns false when the item could not go in the cart (e.g. no stock left). */
+  onAdd: (product: SaleProduct) => boolean;
+  /** How many of each product are already in the cart, by id. */
+  inCart?: Record<string, number>;
   loading?: boolean;
 }
 
@@ -18,76 +27,180 @@ export interface ProductGridProps {
 const isOutOfStock = (product: SaleProduct) =>
   product.track_stock !== 0 && (!product.stock_qty || product.stock_qty <= 0);
 
-export default function ProductGrid({ products, onAdd, loading }: ProductGridProps) {
-  const handleTap = (product: SaleProduct) => {
+const isLow = (product: SaleProduct) =>
+  product.track_stock !== 0 && product.reorder_level != null && product.stock_qty <= Number(product.reorder_level);
+
+const GRID = {
+  display: "grid",
+  gap: 1.5,
+  gridTemplateColumns: "repeat(auto-fill, minmax(min(150px, 46%), 1fr))",
+  p: 0.5,
+} as const;
+
+function StockLine({ product }: { product: SaleProduct }) {
+  const out = isOutOfStock(product);
+  const low = !out && isLow(product);
+  const label =
+    product.track_stock === 0
+      ? "Service"
+      : out
+        ? "Out of stock"
+        : `${product.stock_qty} ${product.unit && product.unit !== "pcs" ? product.unit : "left"}${low ? " · low" : ""}`;
+
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+      <Box
+        aria-hidden
+        sx={{
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          flexShrink: 0,
+          bgcolor: out ? "error.main" : low ? "warning.main" : product.track_stock === 0 ? "secondary.main" : "primary.main",
+        }}
+      />
+      <Typography variant="caption" color={out ? "error" : "text.secondary"} sx={{ fontWeight: 700 }} noWrap>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+export default function ProductGrid({ products, onAdd, inCart = {}, loading }: ProductGridProps) {
+  const handleTap = (product: SaleProduct, event: MouseEvent<HTMLElement>) => {
+    const card = event.currentTarget;
     if (isOutOfStock(product)) {
-      toast.error("Out of stock");
+      toast.error(`${product.name} is out of stock`);
+      card.classList.remove("pos-shake");
+      void card.offsetWidth;
+      card.classList.add("pos-shake");
       return;
     }
-    onAdd(product);
+    if (onAdd(product)) {
+      const tile = card.querySelector<HTMLElement>("[data-tile]") ?? card;
+      flyToCart(tile, initials(product.name), tileGradient(product.name));
+    }
   };
 
   if (loading) {
     return (
-      <Typography color="text.secondary" sx={{ p: 2 }}>
-        Loading products…
-      </Typography>
+      <Box sx={GRID} aria-busy="true" aria-label="Loading products">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Card key={i} sx={{ p: 1.25 }}>
+            <Skeleton variant="rounded" height={76} />
+            <Skeleton width="80%" sx={{ mt: 1 }} />
+            <Skeleton width="45%" />
+          </Card>
+        ))}
+      </Box>
     );
   }
 
   if (products.length === 0) {
     return (
-      <Typography color="text.secondary" sx={{ p: 2 }}>
-        No products found
-      </Typography>
+      <EmptyState
+        icon={<SearchOffIcon />}
+        title="No products found"
+        message="Try another name or code, or pick a different category."
+      />
     );
   }
 
   return (
-    <Grid container spacing={1.5} sx={{ p: 0.5 }}>
-      {products.map((product) => {
-        const outOfStock = isOutOfStock(product);
+    <Box sx={GRID}>
+      {products.map((product, index) => {
+        const out = isOutOfStock(product);
+        const count = inCart[String(product.id)] ?? 0;
+        const seed = product.name;
         return (
-          <Grid key={product.id} size={{ xs: 6, sm: 4, md: 3 }}>
-            <Card sx={{ height: "100%" }}>
-              <CardActionArea
-                onClick={() => handleTap(product)}
-                data-testid={`product-card-${product.id}`}
+          <Card
+            key={product.id}
+            className="pos-enter"
+            sx={{
+              animationDelay: stagger(index, 25, 16),
+              overflow: "visible",
+              position: "relative",
+              opacity: out ? 0.62 : 1,
+              transition: "box-shadow 200ms, transform 200ms",
+              "@media (hover: hover)": {
+                "&:hover": { transform: out ? undefined : "translateY(-3px)" },
+              },
+            }}
+          >
+            {count > 0 && (
+              <Box
+                key={count}
+                className="pos-bump"
+                aria-label={`${count} in cart`}
+                sx={(theme) => ({
+                  position: "absolute",
+                  top: -8,
+                  right: -8,
+                  zIndex: 1,
+                  minWidth: 28,
+                  height: 28,
+                  px: 0.75,
+                  borderRadius: "14px",
+                  display: "grid",
+                  placeItems: "center",
+                  fontWeight: 800,
+                  fontSize: 13,
+                  color: theme.palette.secondary.contrastText,
+                  bgcolor: "secondary.main",
+                  border: `2px solid ${theme.palette.background.paper}`,
+                  boxShadow: `0 4px 10px ${alpha(theme.palette.secondary.main, 0.4)}`,
+                })}
+              >
+                {Number.isInteger(count) ? count : count.toFixed(1)}
+              </Box>
+            )}
+            <CardActionArea
+              onClick={(e) => handleTap(product, e)}
+              data-testid={`product-card-${product.id}`}
+              aria-label={`Add ${product.name}, ${money(product.selling_price)}`}
+              sx={{ height: "100%", p: 1.25, display: "flex", flexDirection: "column", alignItems: "stretch", gap: 1, borderRadius: "inherit" }}
+            >
+              <Box
+                data-tile
+                aria-hidden
                 sx={{
-                  minHeight: 96,
-                  height: "100%",
-                  p: 1.5,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  justifyContent: "flex-start",
-                  gap: 0.5,
+                  height: 76,
+                  borderRadius: "12px",
+                  display: "grid",
+                  placeItems: "center",
+                  position: "relative",
+                  overflow: "hidden",
+                  background: tileGradient(seed),
+                  filter: out ? "grayscale(0.9)" : "none",
+                  color: "#fff",
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    background: "radial-gradient(120px 60px at 85% 0%, rgba(255,255,255,.28), transparent 70%)",
+                  },
                 }}
               >
-                <Typography variant="subtitle2" noWrap sx={{ width: "100%" }}>
+                <Typography sx={{ fontFamily: "Rubik Variable, Rubik, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: "0.02em" }}>
+                  {initials(product.name)}
+                </Typography>
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ lineHeight: 1.25, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "2.5em" }}
+                >
                   {product.name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="h6" sx={{ fontSize: "1.05rem", mt: 0.25 }}>
                   {money(product.selling_price)}
                 </Typography>
-                <Box sx={{ mt: "auto" }}>
-                  <Chip
-                    size="small"
-                    label={
-                      product.track_stock === 0
-                        ? "Service"
-                        : outOfStock
-                          ? "Out of stock"
-                          : `Stock: ${product.stock_qty}`
-                    }
-                    color={outOfStock ? "error" : "default"}
-                  />
-                </Box>
-              </CardActionArea>
-            </Card>
-          </Grid>
+                <StockLine product={product} />
+              </Box>
+            </CardActionArea>
+          </Card>
         );
       })}
-    </Grid>
+    </Box>
   );
 }

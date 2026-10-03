@@ -49,11 +49,13 @@ body {
 }
 
 .pos-enter {
-  animation: pos-fade-up 260ms cubic-bezier(0.2, 0, 0, 1) both;
+  /* backwards, not both: a fill that outlives the animation keeps a transform
+     in effect, which would trap position: fixed children (the cart bar). */
+  animation: pos-fade-up 260ms cubic-bezier(0.2, 0, 0, 1) backwards;
 }
 
 .pos-shake {
-  animation: pos-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation: pos-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 .pos-flash-ok {

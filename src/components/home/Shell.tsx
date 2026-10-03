@@ -137,7 +137,7 @@ export default function Shell({ children }: ShellProps) {
                         top: 10,
                         bottom: 10,
                         width: 4,
-                        borderRadius: 4,
+                        borderRadius: "4px",
                         bgcolor: "primary.main",
                         transform: active ? "scaleY(1)" : "scaleY(0)",
                         transition: `transform ${duration.enter}ms ${easing.spring}`,
@@ -169,7 +169,7 @@ export default function Shell({ children }: ShellProps) {
         sx={{
           m: 1.5,
           p: 1.5,
-          borderRadius: 3,
+          borderRadius: "12px",
           display: "flex",
           alignItems: "center",
           gap: 1.25,
