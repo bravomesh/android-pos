@@ -12,6 +12,8 @@ import store from "./store";
 import { ThemeModeProvider } from "./theme/ThemeModeContext";
 import { ToastProvider } from "./toast/ToastProvider";
 
+import "@fontsource-variable/rubik";
+import "@fontsource-variable/nunito-sans";
 import "./index.css";
 
 const initApp = async () => {

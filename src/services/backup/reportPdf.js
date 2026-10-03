@@ -62,7 +62,7 @@ export function buildDailyReportPdf(date, data) {
       KES(t.net_amount)
     ]),
     styles: { fontSize: 9 },
-    headStyles: { fillColor: [63, 81, 181] },
+    headStyles: { fillColor: [4, 120, 87] },
     margin: { left: margin, right: margin }
   });
   y = doc.lastAutoTable.finalY + 16;
@@ -79,7 +79,7 @@ export function buildDailyReportPdf(date, data) {
       KES(p.revenue)
     ]),
     styles: { fontSize: 9 },
-    headStyles: { fillColor: [63, 81, 181] },
+    headStyles: { fillColor: [4, 120, 87] },
     margin: { left: margin, right: margin }
   });
   y = doc.lastAutoTable.finalY + 16;
@@ -95,7 +95,7 @@ export function buildDailyReportPdf(date, data) {
       ['Total', KES(data.expensesTotal)]
     ],
     styles: { fontSize: 9 },
-    headStyles: { fillColor: [63, 81, 181] },
+    headStyles: { fillColor: [4, 120, 87] },
     margin: { left: margin, right: margin }
   });
   y = doc.lastAutoTable.finalY + 24;
