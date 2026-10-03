@@ -39,7 +39,6 @@ export default function Dashboard() {
           gap: 1.5,
         }}
       >
-        <Typography variant="h5">Dashboard</Typography>
         <RangePicker value={range} onChange={setRange} />
       </Box>
 
