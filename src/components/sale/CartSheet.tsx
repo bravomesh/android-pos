@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Drawer from "@mui/material/Drawer";
 import Paper from "@mui/material/Paper";
@@ -16,6 +17,45 @@ import { getCartItemsArraySelector } from "../../selectors";
 import { updateCartItem, removeItemFromCart, updateDiscountOnTotal, updateTax } from "../../actions/cart";
 import { CartLine } from "../../reducers/cart";
 import { money } from "../../money";
+
+/**
+ * Quantity box for goods sold by weight or length (1.5 kg, 2.25 m). The
+ * typed text is kept as-is while editing, so "1." is not snapped back to
+ * "1", and is applied when the cashier leaves the box or presses Enter.
+ */
+function QtyField({ line, onChange }: { line: CartLine; onChange: (qty: number) => void }) {
+  const [text, setText] = useState(String(line.qty));
+
+  useEffect(() => {
+    setText(String(line.qty));
+  }, [line.qty]);
+
+  const commit = () => {
+    const qty = Number(text);
+    if (qty > 0 && qty !== line.qty) onChange(qty);
+    else setText(String(line.qty));
+  };
+
+  return (
+    <TextField
+      size="small"
+      type="number"
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => e.key === "Enter" && commit()}
+      slotProps={{
+        htmlInput: {
+          inputMode: "decimal",
+          "aria-label": `${line.name} quantity`,
+          "data-testid": `cart-qty-${line.id}`,
+          style: { textAlign: "center", padding: "6px 4px" },
+        },
+      }}
+      sx={{ width: 64 }}
+    />
+  );
+}
 
 export interface CartSheetProps {
   open: boolean;
@@ -74,7 +114,7 @@ export default function CartSheet({ open, onClose, variant, onCharge }: CartShee
                 >
                   <RemoveIcon fontSize="small" />
                 </IconButton>
-                <Typography sx={{ minWidth: 24, textAlign: "center" }}>{line.qty}</Typography>
+                <QtyField line={line} onChange={(qty) => dispatch(updateCartItem({ ...line, qty }))} />
                 <IconButton
                   size="small"
                   aria-label={`increase ${line.name} quantity`}

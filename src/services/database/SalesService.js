@@ -110,8 +110,18 @@ class SalesService {
       throw new Error('Product not found');
     }
 
-    const qty = item.qty || 1;
-    const discount = item.discount || 0;
+    // Quantities can be fractional (1.5 kg), but never zero or negative.
+    const qty = Number(item.qty);
+    const discount = Number(item.discount) || 0;
+
+    if (!(qty > 0)) {
+      throw new Error(`Enter a quantity for ${product.name}`);
+    }
+
+    if (discount < 0 || discount > product.selling_price) {
+      throw new Error(`The discount on ${product.name} is more than its price`);
+    }
+
     const sellingPrice = product.selling_price - discount;
     const price = sellingPrice * qty;
 
@@ -219,8 +229,17 @@ class SalesService {
     // Calculate totals
     const billAmount = items.reduce((sum, item) => sum + item.price, 0);
     const discountOnItems = items.reduce((sum, item) => sum + (item.discount * item.qty), 0);
-    const discountOnTotal = saleData.discountOnTotal || 0;
-    const taxPercent = parseFloat(saleData.tax || '0');
+    const discountOnTotal = Number(saleData.discountOnTotal) || 0;
+    const taxPercent = parseFloat(saleData.tax || '0') || 0;
+
+    if (discountOnTotal < 0 || discountOnTotal > billAmount) {
+      throw new Error('The discount is more than the bill');
+    }
+
+    if (taxPercent < 0) {
+      throw new Error('Tax cannot be negative');
+    }
+
     const subtotal = billAmount - discountOnTotal;
     const taxAmount = subtotal * (taxPercent / 100);
     const netAmount = subtotal + taxAmount;
