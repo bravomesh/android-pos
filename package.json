@@ -62,6 +62,8 @@
     "cap:open:android": "npx cap open android",
     "build:android": "npm run build && npx cap copy android && npx cap sync android",
     "dev:android": "node scripts/dev-android.mjs",
+    "apk": "node scripts/build-apk.mjs",
+    "apk:install": "node scripts/build-apk.mjs --install",
     "test": "vitest run",
     "test:watch": "vitest"
   }

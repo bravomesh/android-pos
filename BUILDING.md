@@ -34,14 +34,23 @@ Capacitor plugins. Run it again after every code change.
 
 ## 3. Produce an APK
 
-### Debug build (quickest, for trying it out)
+### One command (for your own phone or the shop's tablet)
 
 ```bash
-cd android
-./gradlew assembleDebug
+npm run apk
 ```
 
-The APK lands at `android/app/build/outputs/apk/debug/app-debug.apk`.
+That builds the app and leaves **`mobile-pos.apk`** in the project folder.
+Copy it to the phone any way you like (USB, Google Drive, email), tap it
+there, and allow installing from that source when Android asks. Or plug
+the phone in with USB debugging on and run `npm run apk:install` to build
+and install in one go.
+
+It finds a JDK 21 on its own and says what to do if one is missing. The
+APK is signed with this computer's debug key, which Android accepts for
+sideloading; build updates on the same computer, or Android will refuse to
+install them over the old one (uninstalling first deletes the app's data —
+take a backup).
 
 ### Release build (what you install in a shop)
 
