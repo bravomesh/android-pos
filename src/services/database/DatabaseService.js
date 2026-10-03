@@ -382,10 +382,14 @@ class DatabaseService {
    */
   async run(sql, params = []) {
     try {
-      const result = await this.db.run(sql, params);
+      // Inside withTransaction the statement must not open a transaction of
+      // its own: on Android that is "Already in transaction", and on the web
+      // it would commit the outer transaction half-way through.
+      const inTransaction = this.transactionDepth > 0;
+      const result = await this.db.run(sql, params, !inTransaction);
       // Inside a transaction the store is flushed once at commit, so a
       // rolled-back write is never snapshotted to IndexedDB.
-      if (this.transactionDepth === 0) {
+      if (!inTransaction) {
         await this.persistWebStore();
       }
       return result;
@@ -414,8 +418,18 @@ class DatabaseService {
    * through leaves no half-applied writes (a sale that deducted stock but
    * never recorded the sale, for example).
    *
+   * This uses the plugin's own transaction calls. Raw BEGIN/COMMIT through
+   * execute() does not work: execute() wraps itself in a transaction, so on
+   * the web the BEGIN is rejected outright, and on Android the BEGIN is
+   * undone straight away and the COMMIT then fails after every write has
+   * already been saved one by one.
+   *
    * Nested calls join the outermost transaction rather than starting a new
    * one, because SQLite does not support nested BEGIN.
+   *
+   * ponytail: no lock — a write issued from elsewhere while a transaction is
+   * open joins it. Fine for one till driven by one cashier; add a queue here
+   * if background writers beyond the nightly backup appear.
    */
   async withTransaction(work) {
     if (this.transactionDepth > 0) {
@@ -427,19 +441,19 @@ class DatabaseService {
       }
     }
 
-    await this.db.execute('BEGIN TRANSACTION');
+    await this.db.beginTransaction();
     this.transactionDepth = 1;
 
     try {
       const result = await work();
-      await this.db.execute('COMMIT');
+      await this.db.commitTransaction();
       this.transactionDepth = 0;
       await this.persistWebStore();
       return result;
     } catch (error) {
       this.transactionDepth = 0;
       try {
-        await this.db.execute('ROLLBACK');
+        await this.db.rollbackTransaction();
       } catch (rollbackError) {
         console.error('Rollback failed:', rollbackError);
       }
@@ -448,35 +462,13 @@ class DatabaseService {
   }
 
   /**
-   * Execute multiple statements in a transaction
-   */
-  async executeTransaction(statements) {
-    try {
-      await this.db.execute('BEGIN TRANSACTION');
-
-      for (const stmt of statements) {
-        await this.db.run(stmt.sql, stmt.params || []);
-      }
-
-      await this.db.execute('COMMIT');
-      await this.persistWebStore();
-      return true;
-    } catch (error) {
-      await this.db.execute('ROLLBACK');
-      console.error('Transaction error:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Get the next transaction ID
    */
   async getNextTransactionId() {
-    const result = await this.db.query("SELECT count FROM transaction_id WHERE id = 1");
-    const currentCount = result.values[0]?.count || 0;
-    const nextCount = currentCount + 1;
-    await this.db.run("UPDATE transaction_id SET count = ? WHERE id = 1", [nextCount]);
-    return nextCount;
+    // Incremented in SQL so two callers can never be handed the same id.
+    await this.run('UPDATE transaction_id SET count = count + 1 WHERE id = 1');
+    const result = await this.query('SELECT count FROM transaction_id WHERE id = 1');
+    return result[0].count;
   }
 
   /**
