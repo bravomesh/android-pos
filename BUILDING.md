@@ -78,7 +78,10 @@ normal sideloading prompt, and is the only prompt the app needs.
 2. Go to **Users**, tap the admin account, and set a real password. The app
    shows a warning banner until you do. There is no way in and no back door
    once the password is changed, so write it down somewhere safe.
-3. Add a cashier account for each person who works the till.
+3. Add a cashier account for each person who works the till. Cashiers see
+   the register, the sales history and customers; everything else, and
+   reversing a sale, is for administrators. If a cashier forgets their
+   password, an administrator sets a new one from **Users**.
 4. Set up **Product types**, then add your products under **Products**.
 5. Check **Stock** shows what you actually have on the shelves.
 
@@ -104,6 +107,16 @@ next time the app is opened. Nothing needs to run in the background, so no
 autostart or battery exemption is required on any device.
 
 You can also trigger an export by hand from the **Backup** screen.
+
+### Moving to a new tablet
+
+Install the app on the new tablet, sign in as `admin` / `admin`, open
+**Backup**, choose **Choose backup file** and pick the latest
+`…-pos-backup.json` (copy it over USB into `Download` or `Documents` first if
+it is not already there). Everything — products, stock, sales, customers,
+balances and user accounts — is replaced by what is in the file, and you
+sign in again with the passwords from the old tablet. The data that was on
+the tablet is saved as a `before-restore-….json` copy first.
 
 **Copy the backups off the device regularly.** They are the only copy of the
 shop's records, and a lost or broken tablet takes them with it.

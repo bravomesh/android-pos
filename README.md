@@ -7,18 +7,26 @@ A fully offline-capable Point of Sale application for Android tablets, built wit
 - **Fully offline** — all data lives in a SQLite database on the device; the
   app never contacts a server
 - **Register** — product grid, search, barcode/SKU scanning straight into the
-  cart, per-item and whole-basket discounts, tax
+  cart, per-item and whole-basket discounts, tax, and quantities typed in for
+  goods sold by weight or length (1.5 kg)
+- **Sales history** — every sale by day, with its lines, customer and cashier;
+  an administrator can reverse a sale (a return or a mistake), which puts the
+  goods back and takes any debt off the customer's account
 - **Stock for any kind of shop** — SKU and barcode per product, units (pieces,
   kilograms, litres, ...), a reorder level per product, and items that are
   billed but not stocked, such as alterations or a delivery fee
 - **Stock movements are accounted for** — damage, spoilage, theft, shop use and
   physical stock takes are recorded with a reason, not edited away
-- **Credit sales** — put a sale on a customer's account, take part payment,
-  track what is outstanding
+- **Credit sales** — put a sale on a customer's account with part payment or
+  none, see what each customer owes, and take payments against it
 - **Reports** — dashboard, profit and loss, sales by product, sales trend,
   stock valuation, low stock
-- **Daily backup** — a PDF sales report and a full JSON data export, written
-  automatically for each trading day
+- **Daily backup and restore** — a PDF sales report and a full JSON data
+  export, written automatically for each trading day; the JSON file restores
+  the whole shop onto a new tablet
+- **Cashiers and administrators** — cashiers get the register, sales history
+  and customers; the back office, reversals and user accounts are for
+  administrators. Each sale records who rang it up
 - **Runs on any Android 6+ device**, phone or tablet, with no special
   permissions
 
@@ -120,32 +128,17 @@ Then open Android Studio and build the APK.
 ## Project Structure
 
 ```
-mobile_POS/
-├── public/                    # Static assets
-├── src/
-│   ├── api/
-│   │   ├── index.js          # API adapter (uses local services)
-│   │   └── localApi.js       # Maps to SQLite services
-│   ├── components/           # React components
-│   │   ├── DatabaseProvider.js  # DB initialization wrapper
-│   │   └── ...               # Other components
-│   ├── services/
-│   │   └── database/         # SQLite database services
-│   │       ├── DatabaseService.js    # Core DB connection
-│   │       ├── ProductsService.js    # Products & Stock
-│   │       ├── CustomersService.js   # Customers
-│   │       ├── VendorsService.js     # Vendors
-│   │       ├── SalesService.js       # Transactions & Cart
-│   │       ├── ReportsService.js     # Analytics
-│   │       ├── ExpensesService.js    # Expenses
-│   │       ├── ReceivingsService.js  # Inventory
-│   │       └── UsersService.js       # Authentication
-│   ├── actions/              # Redux actions
-│   ├── reducers/             # Redux reducers
-│   └── index.js              # App entry point
-├── android/                  # Android native project (after cap add)
-├── capacitor.config.json     # Capacitor configuration
-└── package.json
+src/
+├── main.tsx                 # Entry point: providers, then DatabaseGate → App
+├── api/                     # The facade every screen calls (index.js),
+│                            # mapped onto the database services (localApi.js)
+├── services/
+│   ├── database/            # SQLite: schema and transactions
+│   │                        # (DatabaseService.js), one service per area
+│   └── backup/              # Nightly PDF + JSON export, scheduler, restore
+├── components/              # Screens (register, sales, stock, users, ...)
+├── reducers/, actions/      # Redux: signed-in user and the cart
+└── money.ts                 # The shop's currency, used everywhere
 ```
 
 ## Database Schema
@@ -212,7 +205,7 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 ### App Crashes on Start
 
 1. Check Android Studio Logcat for errors
-2. Ensure minimum SDK version is 22+
+2. Ensure minimum SDK version is 23+
 3. Check that all Capacitor plugins are properly installed
 
 ## Not built yet
@@ -221,9 +214,7 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 - Receipt printing over Bluetooth
 - Camera-based barcode scanning (a USB or Bluetooth scanner works today —
   it types the code into the search box)
-- Restoring from a backup file inside the app (the JSON export holds
-  everything, but reloading it is a manual job)
-- [ ] Multi-user support with PIN login
+- PIN login for cashiers
 
 ## License
 
