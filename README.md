@@ -1,30 +1,35 @@
-# Mobile POS - Android Tablet Point of Sale
+# Daisy's Baby Shop - offline point of sale for Android
 
-A fully offline-capable Point of Sale application for Android tablets, built with React and Capacitor with local SQLite database.
+A fully offline point of sale for an Android phone or tablet, built with React and Capacitor on a local SQLite database. It ships set up as Daisy's Baby Shop, with a sample baby shop to explore.
 
 ## Features
 
-- **Fully offline** — all data lives in a SQLite database on the device; the
+- **Fully offline**: all data lives in a SQLite database on the device; the
   app never contacts a server
-- **Register** — product grid, search, barcode/SKU scanning straight into the
+- **Register**: product grid, search, barcode/SKU scanning straight into the
   cart, per-item and whole-basket discounts, tax, and quantities typed in for
   goods sold by weight or length (1.5 kg)
-- **Sales history** — every sale by day, with its lines, customer and who
+- **Sales history**: every sale by day, with its lines, customer and who
   rang it up; the owner can reverse a sale (a return or a mistake), which puts the
   goods back and takes any debt off the customer's account
-- **Stock for any kind of shop** — SKU and barcode per product, units (pieces,
+- **Stock for any kind of shop**: SKU and barcode per product, units (pieces,
   kilograms, litres, ...), a reorder level per product, and items that are
   billed but not stocked, such as alterations or a delivery fee
-- **Stock movements are accounted for** — damage, spoilage, theft, shop use and
+- **Stock movements are accounted for**: damage, spoilage, theft, shop use and
   physical stock takes are recorded with a reason, not edited away
-- **Credit sales** — put a sale on a customer's account with part payment or
+- **Credit sales**: put a sale on a customer's account with part payment or
   none, see what each customer owes, and take payments against it
-- **Reports** — dashboard, profit and loss, sales by product, sales trend,
+- **Supplier credit**: record deliveries taken on credit, see what is owed
+  to each supplier, and record paying them
+- **Sample shop**: a new install opens on a sample baby shop (products,
+  suppliers, customers, credit and a week of sales); the owner clears it
+  with **Backup → Start afresh** when the real shop begins
+- **Reports**: dashboard, profit and loss, sales by product, sales trend,
   stock valuation, low stock
-- **Daily backup and restore** — a PDF sales report and a full JSON data
+- **Daily backup and restore**: a PDF sales report and a full JSON data
   export, written automatically for each trading day; the JSON file restores
   the whole shop onto a new tablet
-- **Owner and shopkeeper roles** — shopkeepers get the register, sales
+- **Owner and shopkeeper roles**: shopkeepers get the register, sales
   history and customers; the owner gets everything, including the
   dashboard, stock, restocking, expenses, backups and user accounts. Each
   sale records who rang it up
@@ -63,7 +68,7 @@ first-run checklist.
 - Node.js v14+ (v18+ recommended)
 - npm or yarn
 - Android Studio (for building APK)
-- Java JDK 21 (see BUILDING.md — the JDK 25 bundled with recent Android
+- Java JDK 21 (see BUILDING.md: the JDK 25 bundled with recent Android
   Studio cannot run this project's Gradle)
 
 ## Installation
@@ -170,7 +175,7 @@ The app uses SQLite with the following tables:
 - **Password**: `admin`
 
 Change it from the **Users** screen before the shop opens. The app shows a
-warning banner until you do, and there is no override once it is changed —
+warning banner until you do, and there is no override once it is changed:
 if the new password is lost, the only way back in is to reinstall, which
 erases the data.
 
@@ -214,7 +219,7 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 
 - Cloud sync between devices
 - Receipt printing over Bluetooth
-- Camera-based barcode scanning (a USB or Bluetooth scanner works today —
+- Camera-based barcode scanning (a USB or Bluetooth scanner works today, as
   it types the code into the search box)
 - PIN login for shopkeepers
 

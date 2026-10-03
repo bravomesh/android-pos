@@ -5,7 +5,7 @@ node_modules/
 
 # Build output
 build/
-mobile-pos.apk
+Daisys-Baby-Shop.apk
 dist/
 coverage/
 

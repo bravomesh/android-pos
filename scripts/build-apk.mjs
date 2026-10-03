@@ -3,7 +3,7 @@
  * Build an installable APK: `npm run apk`
  *
  * Builds the web app, copies it into the Android project, runs Gradle and
- * leaves the result as mobile-pos.apk in the project folder — ready to copy
+ * leaves the result as Daisys-Baby-Shop.apk in the project folder, ready to copy
  * onto a phone, or pass `--install` (`npm run apk:install`) to put it on
  * the phone plugged in over USB.
  *
@@ -17,7 +17,7 @@ import { copyFileSync, statSync } from "node:fs";
 import { androidEnv, connectedDevices, fail, say, NO_DEVICE } from "./android-env.mjs";
 
 const install = process.argv.includes("--install");
-const OUT = "mobile-pos.apk";
+const OUT = "Daisys-Baby-Shop.apk";
 const env = androidEnv();
 
 if (install && connectedDevices(env).length === 0) fail(NO_DEVICE);

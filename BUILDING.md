@@ -1,6 +1,6 @@
 # Building and installing the APK
 
-The app targets **any Android device running Android 6.0 (API 23) or later** —
+The app targets **any Android device running Android 6.0 (API 23) or later**,
 phone or tablet, any manufacturer. It needs no special permissions, no
 "All files access" grant, and no vendor-specific setup. If a step below asks
 you to change a device setting, something has gone wrong; open an issue
@@ -40,7 +40,7 @@ Capacitor plugins. Run it again after every code change.
 npm run apk
 ```
 
-That builds the app and leaves **`mobile-pos.apk`** in the project folder.
+That builds the app and leaves **`Daisys-Baby-Shop.apk`** in the project folder.
 Copy it to the phone any way you like (USB, Google Drive, email), tap it
 there, and allow installing from that source when Android asks. Or plug
 the phone in with USB debugging on and run `npm run apk:install` to build
@@ -49,14 +49,14 @@ and install in one go.
 It finds a JDK 21 on its own and says what to do if one is missing. The
 APK is signed with this computer's debug key, which Android accepts for
 sideloading; build updates on the same computer, or Android will refuse to
-install them over the old one (uninstalling first deletes the app's data —
-take a backup).
+install them over the old one (uninstalling first deletes the app's data,
+so take a backup first).
 
 ### Release build (what you install in a shop)
 
 A release APK must be signed, or Android will refuse to install it.
 
-1. Create a keystore once, and keep it somewhere safe — losing it means you
+1. Create a keystore once, and keep it somewhere safe. Losing it means you
    can never update an installed app in place:
 
    ```bash
@@ -65,7 +65,7 @@ A release APK must be signed, or Android will refuse to install it.
    ```
 
 2. Open the `android/` folder in Android Studio.
-3. **Build → Generate Signed Bundle / APK → APK**, choose the keystore, pick
+3. **Build → Generate Signed Bundle / APK → APK**: choose the keystore, pick
    the `release` variant, and build.
 
 The APK lands at `android/app/build/outputs/apk/release/`.
@@ -83,23 +83,29 @@ adb install -r app-release.apk
 ```
 
 Or copy the APK to the device and open it with a file manager. Android will
-ask permission to install from that source the first time — this is the
+ask permission to install from that source the first time. This is the
 normal sideloading prompt, and is the only prompt the app needs.
 
 ## 5. First run, before the shop opens
 
+The app opens on a **sample baby shop** so there is something to explore:
+products, suppliers, customers, deliveries on credit and a week of sales.
+When you are ready to trade, go to **Backup → Start afresh → Clear
+everything**. That removes the sample (a copy is saved first) and keeps
+your user accounts.
+
 1. Sign in as `admin` / `admin`.
-2. Go to **Users**, tap the admin account, and set a real password. The app
+2. Go to **Users**: tap the admin account, and set a real password. The app
    shows a warning banner until you do. There is no way in and no back door
    once the password is changed, so write it down somewhere safe.
 3. Add a **Shopkeeper** account for each person who works the till.
    Shopkeepers see the register, the sales history and customers (they can
-   add customers and take payments, but not delete them). Everything else —
-   the dashboard, products, stock, receivings, expenses, backups, users,
-   and reversing a sale — is for the **Owner**. Anyone can change their own
+   add customers and take payments, but not delete them). Everything else
+   (the dashboard, products, stock, receivings, expenses, backups, users,
+   and reversing a sale) is for the **Owner**. Anyone can change their own
    password from the key button beside their name in the menu; if a
    shopkeeper forgets theirs, the owner sets a new one from **Users**.
-4. Set up **Product types**, then add your products under **Products**.
+4. Set up **Product types**: then add your products under **Products**.
 5. Check **Stock** shows what you actually have on the shelves.
 
 ## Developing on a phone with live reload
@@ -143,7 +149,7 @@ Android/data/com.pos.mobilepos/files/POS/Daily/
 
 A copy is also attempted in the shared `Documents/POS/Daily/` folder, which
 is easier to reach from a file manager or over USB. That copy is a
-convenience only — the backup succeeds either way.
+convenience only: the backup succeeds either way.
 
 If the tablet was off at 00:30, the export runs for every missed day the
 next time the app is opened. Nothing needs to run in the background, so no
@@ -156,8 +162,8 @@ You can also trigger an export by hand from the **Backup** screen.
 Install the app on the new tablet, sign in as `admin` / `admin`, open
 **Backup**, choose **Choose backup file** and pick the latest
 `…-pos-backup.json` (copy it over USB into `Download` or `Documents` first if
-it is not already there). Everything — products, stock, sales, customers,
-balances and user accounts — is replaced by what is in the file, and you
+it is not already there). Everything (products, stock, sales, customers,
+balances and user accounts) is replaced by what is in the file, and you
 sign in again with the passwords from the old tablet. The data that was on
 the tablet is saved as a `before-restore-….json` copy first.
 
@@ -166,16 +172,16 @@ shop's records, and a lost or broken tablet takes them with it.
 
 ## Troubleshooting
 
-**"App not installed"** — an APK signed with a different key is already
+**"App not installed"**: an APK signed with a different key is already
 installed. Uninstall the old one first (this deletes its data, so export a
 backup first).
 
-**The app opens to an error screen** — the database failed to initialise.
+**The app opens to an error screen**: the database failed to initialise.
 Tap Retry. If it persists, the device storage may be full.
 
-**Sales are landing on the wrong day** — check the device's date, time and
+**Sales are landing on the wrong day**: check the device's date, time and
 timezone. The app books each sale to the local calendar day.
 
-**Backups are not appearing** — check the path above with a file manager or
+**Backups are not appearing**: check the path above with a file manager or
 over USB. Android 11 and later hide `Android/data` from some file managers;
 connecting the device to a computer over USB will still show it.
