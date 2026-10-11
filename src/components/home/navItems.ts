@@ -7,7 +7,8 @@ import LocalShippingIcon from "@mui/icons-material/LocalShippingRounded";
 import MoveToInboxIcon from "@mui/icons-material/MoveToInboxRounded";
 import ReceiptIcon from "@mui/icons-material/ReceiptLongRounded";
 import HistoryIcon from "@mui/icons-material/HistoryRounded";
-import BackupIcon from "@mui/icons-material/CloudDoneRounded";
+import BackupIcon from "@mui/icons-material/SaveRounded";
+import SyncIcon from "@mui/icons-material/SyncRounded";
 import WarehouseIcon from "@mui/icons-material/WarehouseRounded";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccountsRounded";
 
@@ -34,6 +35,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Stock", path: "/stock", icon: createElement(WarehouseIcon), section: "Stock", adminOnly: true },
   { label: "Expenses", path: "/expense", icon: createElement(ReceiptIcon), section: "Back office", adminOnly: true },
   { label: "Backup", path: "/admin/backup", icon: createElement(BackupIcon), section: "Back office", adminOnly: true },
+  { label: "Sync", path: "/admin/sync", icon: createElement(SyncIcon), section: "Back office", adminOnly: true },
   { label: "Users", path: "/users", icon: createElement(ManageAccountsIcon), section: "Back office", adminOnly: true },
 ];
 

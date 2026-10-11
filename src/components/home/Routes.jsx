@@ -25,6 +25,7 @@ import Dashboard from "../dashboard/Dashboard";
 import StockPage from "../stock/StockPage";
 import UsersPage from "../users/UsersPage";
 import UserFormPage from "../users/UserFormPage";
+import SyncPage from "../sync/SyncPage";
 
 // The menu already hides the back office from cashiers; this stops a typed
 // or remembered address getting round it.
@@ -86,6 +87,7 @@ const Routes = () => (
 
     {/* Backup Admin (hidden) */}
     <Route path="/admin/backup" element={<AdminOnly><BackupAdminPanel /></AdminOnly>} />
+    <Route path="/admin/sync" element={<AdminOnly><SyncPage /></AdminOnly>} />
 
     {/* Catch : Not found */}
     <Route path="*" element={<NotFound />} />

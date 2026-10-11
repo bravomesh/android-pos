@@ -18,6 +18,7 @@ import {
   reportsApi,
   usersApi
 } from './localApi';
+import SyncService from '../services/sync/SyncService';
 
 // Map to original API structure used by components
 const auth = {
@@ -59,6 +60,7 @@ const expense = buildEntity(expensesApi);
 const product = {
   ...buildEntity(productsApi),
   findByCode: (code) => productsApi.findByCode(code),
+  getPhotos: () => productsApi.getPhotos(),
   adjustStock: (payload, userId) => productsApi.adjustStock(payload, userId),
   getStockAdjustments: (params) => productsApi.getStockAdjustments(params),
   getStockValuation: () => productsApi.getStockValuation(),
@@ -114,7 +116,7 @@ const reports = {
   getSalesTrend: (startDate, endDate) => reportsApi.getSalesTrend(startDate, endDate)
 };
 
-export default {
+const entities = {
   auth,
   productType,
   product,
@@ -127,3 +129,21 @@ export default {
   reports,
   user
 };
+
+// A phone that only views the shop gets its records from the shop's phone,
+// and anything changed on it would be wiped by the next update. So every
+// call that is not a plain read is refused there, with the reason.
+const READS = /^(get|fetch|find|search|login)/;
+for (const entity of Object.values(entities)) {
+  for (const [name, call] of Object.entries(entity)) {
+    if (READS.test(name)) continue;
+    entity[name] = (...args) => {
+      if (SyncService.isViewer()) {
+        return Promise.reject(new Error('This phone only views the shop. Make changes on the shop phone'));
+      }
+      return call(...args);
+    };
+  }
+}
+
+export default entities;

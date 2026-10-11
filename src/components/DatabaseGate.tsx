@@ -15,6 +15,7 @@ import DatabaseService from "../services/database/DatabaseService";
 import { BrandMark } from "./home/Shell";
 import BackupScheduler from "../services/backup/BackupScheduler";
 import { loadSampleShop } from "../services/demo/sampleShop";
+import SyncService from "../services/sync/SyncService";
 
 type GateState = "initializing" | "ready" | "error";
 
@@ -68,6 +69,7 @@ export default function DatabaseGate({ children }: DatabaseGateProps) {
         }
       }
       setState("ready");
+      SyncService.init();
       BackupScheduler.init().catch((err: unknown) =>
         console.error("BackupScheduler init failed:", err)
       );

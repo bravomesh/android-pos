@@ -134,6 +134,37 @@ using it without the computer. With more than one device attached, pick
 one with `DEVICE=<id> npm run dev:android` (ids from
 `npx cap run android --list`).
 
+## Two phones: the shop phone and the owner's phone
+
+The shop phone is where sales are rung up, and it stays the one true record.
+With sync on, it sends a copy of the shop to the cloud after every change,
+as soon as there is internet. The owner's phone downloads that copy about
+every half minute and shows it: dashboard, sales, stock, customers. It cannot
+change anything, so the two phones can never disagree. With no internet the
+shop phone trades as usual and catches up later, and the nightly backup to
+the phone's own storage carries on exactly as before.
+
+The cloud is your own free Supabase project, so the records stay yours.
+
+1. Create an account and a project at https://supabase.com (the free plan is
+   enough).
+2. In the project open **SQL Editor**, paste the whole of
+   [`supabase/schema.sql`](supabase/schema.sql) and press **Run**.
+3. Open **Project Settings**, then **API**. Copy the **Project URL** and the
+   **anon public** key.
+4. On the shop phone sign in as the owner, open **Sync**, enter the two
+   values and tap **Turn on sync**. The screen now shows a pairing code.
+5. Tap **Send or copy** and send the code to the owner's phone (WhatsApp to
+   yourself works).
+6. On the owner's phone install the same APK, sign in (admin / admin on a new
+   install), open **Sync**, paste the code under "This is the owner's phone"
+   and tap **View the shop**. From then on you sign in there with the same
+   usernames and passwords as on the shop phone.
+
+The pairing code is the key to the shop's records: anyone holding it can read
+them. Share it only with the owner. If it leaks, turn sync off and on again
+on the shop phone, which makes a new code, and pair the owner's phone again.
+
 ## Where the data lives
 
 Everything is in a local SQLite database on the device. The app never

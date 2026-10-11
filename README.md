@@ -4,8 +4,13 @@ A fully offline point of sale for an Android phone or tablet, built with React a
 
 ## Features
 
-- **Fully offline**: all data lives in a SQLite database on the device; the
-  app never contacts a server
+- **Works offline**: all data lives in a SQLite database on the device, and
+  the till needs no internet to trade
+- **Owner's phone (optional cloud sync)**: the shop phone sends a copy of the
+  shop to your own Supabase project whenever it has internet, and a second
+  phone shows it, view-only. See "Two phones" in [BUILDING.md](BUILDING.md)
+- **Product photos**: take a picture in the product form and it shows on the
+  sale screen; products without one keep their coloured tile
 - **Register**: product grid, search, per-item and whole-basket discounts, tax, and quantities typed in for
   goods sold by weight or length (1.5 kg)
 - **Sales history**: every sale by day, with its lines, customer and who
@@ -216,7 +221,7 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 
 ## Not built yet
 
-- Cloud sync between devices
+- Changing the shop from the owner's phone (it only views; one phone writes, so nothing can conflict)
 - Receipt printing over Bluetooth
 - Barcodes and shelf codes (the product form no longer asks for them; the
   database still has the columns)
