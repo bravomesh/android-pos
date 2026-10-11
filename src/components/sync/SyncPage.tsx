@@ -11,6 +11,7 @@ import VisibilityIcon from "@mui/icons-material/VisibilityRounded";
 import ContentCopyIcon from "@mui/icons-material/ContentCopyRounded";
 import SyncIcon from "@mui/icons-material/SyncRounded";
 import ConfirmDialog from "../crud/ConfirmDialog";
+import SyncHelp from "./SyncHelp";
 import { toast } from "../../toast/useToast";
 import SyncService from "../../services/sync/SyncService";
 import { useSync } from "../../services/sync/useSync";
@@ -58,6 +59,7 @@ export default function SyncPage() {
     const till = sync.mode === "till";
     return (
       <Box sx={{ display: "grid", gap: 2, maxWidth: 720, mx: "auto" }}>
+        <SyncHelp />
         <Card sx={{ p: { xs: 2, sm: 3 }, display: "grid", gap: 1.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             {till ? <StorefrontIcon color="primary" /> : <VisibilityIcon color="primary" />}
@@ -134,6 +136,7 @@ export default function SyncPage() {
 
   return (
     <Box sx={{ display: "grid", gap: 2, maxWidth: 720, mx: "auto" }}>
+        <SyncHelp />
       <Card sx={{ p: { xs: 2, sm: 3 }, display: "grid", gap: 2 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <StorefrontIcon color="primary" />
