@@ -134,6 +134,16 @@ export const buildTheme = (mode: ThemeMode): Theme => {
             transition: `box-shadow ${duration.quick}ms`,
             "&.Mui-focused": { boxShadow: `0 0 0 4px ${alpha(c.primary, 0.15)}` },
           },
+          // Matches the larger floated label below, so the gap in the border fits it.
+          notchedOutline: { "& legend": { fontSize: "0.85em" } },
+        },
+      },
+      // The stock 0.75 scale puts a floated label under 12px on a phone.
+      MuiInputLabel: {
+        styleOverrides: {
+          outlined: {
+            "&.MuiInputLabel-shrink": { transform: "translate(14px, -9px) scale(0.85)", maxWidth: "calc(117% - 32px)" },
+          },
         },
       },
       MuiChip: {

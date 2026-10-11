@@ -274,7 +274,7 @@ export default function CheckoutDialog({ open, onClose, onCompleted }: CheckoutD
               setSalesType(value);
               setError("");
             }}
-            sx={{ mb: 2, "& .MuiToggleButton-root": { minHeight: 52, gap: 1 } }}
+            sx={{ mb: 2, "& .MuiToggleButton-root": { minHeight: 52, gap: 1, px: 1, whiteSpace: "nowrap" } }}
           >
             <ToggleButton value="Counter" data-testid="pay-cash">
               <PaymentsIcon aria-hidden /> Cash

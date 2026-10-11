@@ -115,7 +115,7 @@ export default function Shell({ children }: ShellProps) {
             <Typography
               variant="overline"
               color="text.secondary"
-              sx={{ display: "block", px: 3, pt: 1, pb: 0.5, fontSize: "0.68rem" }}
+              sx={{ display: "block", px: 3, pt: 1, pb: 0.5, fontSize: "0.75rem" }}
             >
               {section}
             </Typography>

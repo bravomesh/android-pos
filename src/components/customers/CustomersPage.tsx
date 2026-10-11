@@ -36,7 +36,7 @@ export default function CustomersPage() {
       label: "Owes",
       render: (row) =>
         row.outstanding_balance > 0 ? (
-          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, whiteSpace: "nowrap" }}>
             {money(row.outstanding_balance)}
             <Button
               size="small"
@@ -53,7 +53,7 @@ export default function CustomersPage() {
             </Button>
           </Box>
         ) : (
-          "-"
+          "Nothing"
         ),
     },
   ];

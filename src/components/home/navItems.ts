@@ -27,10 +27,11 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Sale", path: "/sale", icon: createElement(PointOfSaleIcon), section: "Sell" },
   { label: "Sales history", path: "/sales", icon: createElement(HistoryIcon), section: "Sell" },
   { label: "Customers", path: "/customers", icon: createElement(PeopleIcon), section: "Sell" },
+  // The stock section follows the order things are set up: what you sell, who you buy it from, deliveries, then the count.
   { label: "Products", path: "/products", icon: createElement(Inventory2Icon), section: "Stock", adminOnly: true },
-  { label: "Stock", path: "/stock", icon: createElement(WarehouseIcon), section: "Stock", adminOnly: true },
-  { label: "Receivings", path: "/receivings", icon: createElement(MoveToInboxIcon), section: "Stock", adminOnly: true },
   { label: "Vendors", path: "/vendors", icon: createElement(LocalShippingIcon), section: "Stock", adminOnly: true },
+  { label: "Receivings", path: "/receivings", icon: createElement(MoveToInboxIcon), section: "Stock", adminOnly: true },
+  { label: "Stock", path: "/stock", icon: createElement(WarehouseIcon), section: "Stock", adminOnly: true },
   { label: "Expenses", path: "/expense", icon: createElement(ReceiptIcon), section: "Back office", adminOnly: true },
   { label: "Backup", path: "/admin/backup", icon: createElement(BackupIcon), section: "Back office", adminOnly: true },
   { label: "Users", path: "/users", icon: createElement(ManageAccountsIcon), section: "Back office", adminOnly: true },

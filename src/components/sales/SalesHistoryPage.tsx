@@ -222,7 +222,7 @@ export default function SalesHistoryPage() {
                       <Typography variant="subtitle1" sx={{ textDecoration: reversed ? "line-through" : "none" }}>
                         #{sale.id} · {time(sale.created_at)}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>
+                      <Typography variant="body2" color="text.secondary">
                         {sale.items_count} item{sale.items_count === 1 ? "" : "s"}
                         {sale.customer_name ? ` · ${sale.customer_name}` : ""}
                         {sale.cashier_name ? ` · by ${sale.cashier_name}` : ""}

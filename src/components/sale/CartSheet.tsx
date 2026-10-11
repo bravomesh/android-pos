@@ -82,7 +82,8 @@ function CartLineRow({ line }: { line: CartLine }) {
           height: 40,
           borderRadius: "10px",
           flexShrink: 0,
-          display: "grid",
+          // On a narrow phone the room goes to the product name instead.
+          display: { xs: "none", sm: "grid" },
           placeItems: "center",
           color: "#fff",
           fontWeight: 700,
@@ -93,7 +94,7 @@ function CartLineRow({ line }: { line: CartLine }) {
         {initials(line.name)}
       </Box>
       <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+        <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.25, overflowWrap: "anywhere" }}>
           {line.name}
         </Typography>
         <Typography variant="caption" color="text.secondary" noWrap component="p">
@@ -204,7 +205,7 @@ export default function CartSheet({ open, onClose, variant, onCharge }: CartShee
           <Box sx={{ textAlign: "center", py: 5, color: "text.secondary" }} className="pos-enter">
             <ShoppingBasketIcon sx={{ fontSize: 40, opacity: 0.4 }} aria-hidden />
             <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-              Tap a product or scan a barcode
+              Tap a product to add it
             </Typography>
           </Box>
         ) : (

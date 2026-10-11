@@ -6,6 +6,7 @@ export interface ColumnDef<Row> {
   render?: (row: Row) => ReactNode; // optional cell formatter
   primary?: boolean;              // phone card: title line
   secondary?: boolean;            // phone card: subtitle line
+  tableOnly?: boolean;            // left off the phone card, where space is short
 }
 
 export interface ListPageProps<Row extends { id: number | string }> {

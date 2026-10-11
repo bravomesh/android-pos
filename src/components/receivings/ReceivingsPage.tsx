@@ -15,7 +15,7 @@ interface ReceivingRow {
 }
 
 const columns: ColumnDef<ReceivingRow>[] = [
-  { key: "id", label: "Order Id" },
+  { key: "id", label: "Order", tableOnly: true },
   { key: "product_name", label: "Product", primary: true },
   { key: "vendor_name", label: "Vendor", secondary: true },
   { key: "qty", label: "Qty" },

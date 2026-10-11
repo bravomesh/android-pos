@@ -34,7 +34,7 @@ export default function VendorsPage() {
       // Deliveries bought on credit, until the supplier is paid.
       render: (row) =>
         row.owed > 0 ? (
-          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+          <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, whiteSpace: "nowrap" }}>
             {money(row.owed)}
             <Button
               size="small"

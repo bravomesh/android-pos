@@ -22,19 +22,19 @@ interface ProductRow {
 const columns: ColumnDef<ProductRow>[] = [
   { key: "name", label: "Name", primary: true },
   {
-    key: "sku",
-    label: "Code",
+    key: "product_type_name",
+    label: "Category",
     secondary: true,
-    render: (row) => row.sku || row.product_type_name || "-",
+    render: (row) => row.product_type_name || "",
   },
-  { key: "selling_price", label: "Selling Price", render: (row) => money(row.selling_price) },
+  { key: "selling_price", label: "Price", render: (row) => money(row.selling_price) },
   {
     key: "stock_qty",
     label: "Stock",
     // A service has no stock to show, and a product at or below its reorder
     // level is called out where the shopkeeper is already looking.
     render: (row) => {
-      if (!row.track_stock) return "-";
+      if (!row.track_stock) return "";
       const low = row.reorder_level !== null && Number(row.stock_qty) <= Number(row.reorder_level);
       return `${row.stock_qty} ${row.unit || ""}${low ? " (low)" : ""}`.trim();
     },

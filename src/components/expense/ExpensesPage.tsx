@@ -16,10 +16,10 @@ interface ExpenseRow {
 }
 
 const columns: ColumnDef<ExpenseRow>[] = [
-  { key: "id", label: "ID" },
+  { key: "id", label: "ID", tableOnly: true },
   { key: "description", label: "Description", primary: true },
   { key: "amount", label: "Amount", render: (row) => money(row.amount) },
-  { key: "spent_at", label: "Spent At" },
+  { key: "spent_at", label: "Spent on" },
   { key: "expense_type_name", label: "Type", secondary: true },
 ];
 

@@ -6,7 +6,6 @@ import InputAdornment from "@mui/material/InputAdornment";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import SearchIcon from "@mui/icons-material/SearchRounded";
-import QrCodeScannerIcon from "@mui/icons-material/QrCodeScannerRounded";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api";
 import { toast } from "../../toast/useToast";
@@ -168,23 +167,18 @@ export default function SalePage() {
             <TextField
               ref={searchBox}
               fullWidth
-              placeholder="Search or scan a barcode"
+              placeholder="Search products"
               value={term}
               onChange={(e) => {
                 setTerm(e.target.value);
                 search(e.target.value);
               }}
               slotProps={{
-                htmlInput: { "data-testid": "sale-search-input", "aria-label": "Search or scan a barcode" },
+                htmlInput: { "data-testid": "sale-search-input", "aria-label": "Search products" },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
                       <SearchIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <QrCodeScannerIcon color="action" aria-hidden />
                     </InputAdornment>
                   ),
                 },

@@ -52,10 +52,11 @@ export default function StatCard({ label, value, format, icon, color, hint, onCl
         {icon}
       </Box>
       <Box sx={{ minWidth: 0, flex: 1, alignSelf: "stretch" }}>
-        <Typography variant="caption" color="text.secondary" component="div" noWrap sx={{ fontWeight: 700 }}>
+        <Typography variant="caption" color="text.secondary" component="div" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
           {label}
         </Typography>
-        <Typography variant="h5" component="div" noWrap>
+        {/* Sized from the screen width, so a large amount still fits half of a small phone. */}
+        <Typography variant="h5" component="div" sx={{ fontSize: "clamp(1.05rem, 5.2vw, 1.55rem)", overflowWrap: "anywhere" }}>
           <AnimatedNumber value={value} format={format} />
         </Typography>
         {hint && (

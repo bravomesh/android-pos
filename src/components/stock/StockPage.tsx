@@ -54,6 +54,20 @@ interface AdjustmentRow {
 }
 
 
+// Tighter cells on a phone, so the product name gets the room.
+const when = (iso: string) =>
+  new Date(iso).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+const tableBox = {
+  overflowX: "auto",
+  bgcolor: "background.paper",
+  borderRadius: "18px",
+  border: 1,
+  borderColor: "divider",
+  "& th, & td": { px: { xs: 1.25, sm: 2 } },
+};
+const wideOnly = { display: { xs: "none", sm: "table-cell" } };
+
 export default function StockPage() {
   const theme = useTheme();
   const [tab, setTab] = useState(0);
@@ -113,7 +127,7 @@ export default function StockPage() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" } }}>
+      <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", sm: "repeat(3, minmax(0, 1fr))" }, "& > :last-child": { gridColumn: { xs: "1 / -1", sm: "auto" } } }}>
         <StatCard index={0} label="Value at cost" value={totals.cost} format={moneyShort} icon={<SavingsIcon />} color={theme.palette.primary.main} hint={`${totals.units} units on hand`} />
         <StatCard index={1} label="Value at retail" value={totals.retail} format={moneyShort} icon={<SellIcon />} color={theme.palette.secondary.main} hint={`${moneyShort(totals.retail - totals.cost)} margin`} />
         <StatCard
@@ -139,20 +153,20 @@ export default function StockPage() {
       {tab === 0 && (
         <>
           <TextField
-            label="Search by name or code"
+            label="Search by name"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             size="small"
             fullWidth
           />
-          <Box sx={{ overflowX: "auto", bgcolor: "background.paper", borderRadius: "18px", border: 1, borderColor: "divider" }}>
+          <Box sx={tableBox}>
             <Table size="small">
               <TableHead>
                 <TableRow>
                   <TableCell>Product</TableCell>
                   <TableCell align="right">On hand</TableCell>
-                  <TableCell align="right">Reorder at</TableCell>
-                  <TableCell align="right">Cost value</TableCell>
+                  <TableCell align="right" sx={wideOnly}>Reorder at</TableCell>
+                  <TableCell align="right" sx={wideOnly}>Cost value</TableCell>
                   <TableCell align="right" />
                 </TableRow>
               </TableHead>
@@ -163,10 +177,10 @@ export default function StockPage() {
                     Number(row.stock_qty) <= Number(row.reorder_level);
                   return (
                     <TableRow key={row.id} hover className="pos-enter" sx={{ animationDelay: stagger(index, 20, 15) }}>
-                      <TableCell>
+                      <TableCell sx={{ width: "100%" }}>
                         <Typography variant="body2">{row.name}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {row.sku || row.category || ""}
+                          {row.category || ""}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
@@ -174,10 +188,11 @@ export default function StockPage() {
                           size="small"
                           color={low ? "warning" : "default"}
                           label={stockLabel(row.stock_qty, row.unit)}
+                          sx={{ whiteSpace: "nowrap" }}
                         />
                       </TableCell>
-                      <TableCell align="right">{row.reorder_level ?? "-"}</TableCell>
-                      <TableCell align="right">{money(row.stock_cost_value)}</TableCell>
+                      <TableCell align="right" sx={wideOnly}>{row.reorder_level ?? "-"}</TableCell>
+                      <TableCell align="right" sx={wideOnly}>{money(row.stock_cost_value)}</TableCell>
                       <TableCell align="right">
                         <Button
                           size="small"
@@ -207,22 +222,27 @@ export default function StockPage() {
       )}
 
       {tab === 1 && (
-        <Box sx={{ overflowX: "auto", bgcolor: "background.paper", borderRadius: "18px", border: 1, borderColor: "divider" }}>
+        <Box sx={tableBox}>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>When</TableCell>
+                <TableCell sx={wideOnly}>When</TableCell>
                 <TableCell>Product</TableCell>
                 <TableCell>Reason</TableCell>
                 <TableCell align="right">Change</TableCell>
-                <TableCell align="right">After</TableCell>
+                <TableCell align="right" sx={wideOnly}>After</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {adjustments.map((row) => (
                 <TableRow key={row.id} hover>
-                  <TableCell>{new Date(row.created_at).toLocaleString()}</TableCell>
-                  <TableCell>{row.product_name}</TableCell>
+                  <TableCell sx={wideOnly}>{when(row.created_at)}</TableCell>
+                  <TableCell>
+                    {row.product_name}
+                    <Typography variant="caption" color="text.secondary" sx={{ display: { xs: "block", sm: "none" } }}>
+                      {when(row.created_at)}
+                    </Typography>
+                  </TableCell>
                   <TableCell>
                     {row.reason}
                     {row.notes || row.user_name ? (
@@ -238,9 +258,10 @@ export default function StockPage() {
                       color={Number(row.qty_change) < 0 ? "error" : "success"}
                       variant="outlined"
                       label={`${Number(row.qty_change) > 0 ? "+" : ""}${row.qty_change} ${row.unit}`}
+                      sx={{ whiteSpace: "nowrap" }}
                     />
                   </TableCell>
-                  <TableCell align="right">{row.qty_after}</TableCell>
+                  <TableCell align="right" sx={wideOnly}>{row.qty_after}</TableCell>
                 </TableRow>
               ))}
               {adjustments.length === 0 && (

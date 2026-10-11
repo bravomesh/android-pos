@@ -10,7 +10,7 @@ interface ExpenseTypeRow {
 }
 
 const columns: ColumnDef<ExpenseTypeRow>[] = [
-  { key: "id", label: "ID" },
+  { key: "id", label: "ID", tableOnly: true },
   { key: "description", label: "Description", primary: true },
 ];
 

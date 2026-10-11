@@ -16,9 +16,9 @@ const UNIT_OPTIONS = [
   { value: "service", label: "Service (not stocked)" },
 ];
 
-const BASE_FIELDS: FieldDef[] = [
+const FIELDS: FieldDef[] = [
   { name: "name", label: "Name", wide: true, required: true },
-  { name: "productTypeId", label: "Product Type", type: "select", options: [] },
+  { name: "productTypeId", label: "Category", type: "select", options: [] },
   {
     name: "unit",
     label: "Sold by",
@@ -26,35 +26,25 @@ const BASE_FIELDS: FieldDef[] = [
     options: UNIT_OPTIONS,
     helperText: "Choose Service for things you sell but do not stock.",
   },
-  {
-    name: "sku",
-    label: "SKU / shelf code",
-    helperText: "Your own code. Give each size or colour its own.",
-  },
-  {
-    name: "barcode",
-    label: "Barcode",
-    helperText: "Scan or type the code printed on the packaging.",
-  },
   { name: "costPrice", label: "Cost price", type: "money", required: true },
   { name: "sellingPrice", label: "Selling price", type: "money", required: true },
-  {
-    name: "reorderLevel",
-    label: "Reorder level",
-    type: "number",
-    helperText: "Warn when stock drops to this. Leave blank for no warning.",
-  },
-  { name: "description", label: "Description", wide: true },
-];
-
-const NEW_ONLY_FIELDS: FieldDef[] = [
   {
     name: "openingStock",
     label: "Opening stock",
     type: "number",
     helperText: "How many you have right now. Add more later with a receiving.",
   },
+  {
+    name: "reorderLevel",
+    label: "Warn when stock drops to",
+    type: "number",
+    helperText: "Leave blank for no warning.",
+  },
+  { name: "description", label: "Description", wide: true },
 ];
+
+// Prefilled so a new product warns when it runs low without anyone having to think about it.
+const DEFAULT_REORDER_LEVEL = "5";
 
 export default function ProductFormPage() {
   const { id } = useParams();
@@ -64,20 +54,20 @@ export default function ProductFormPage() {
   // that, stock moves through receivings, sales and adjustments so that every
   // change is accounted for.
   const [fields, setFields] = useState<FieldDef[]>(
-    isEdit ? BASE_FIELDS : [...BASE_FIELDS, ...NEW_ONLY_FIELDS]
+    isEdit ? FIELDS.filter((f) => f.name !== "openingStock") : FIELDS
   );
   const [initial, setInitial] = useState<Record<string, unknown>>({
     name: "",
     productTypeId: "",
     description: "",
-    sku: "",
-    barcode: "",
     unit: "pcs",
     costPrice: "",
     sellingPrice: "",
-    reorderLevel: "",
+    reorderLevel: DEFAULT_REORDER_LEVEL,
     openingStock: "",
   });
+  // The form does not ask for codes for now; whatever a product already has is kept.
+  const [codes, setCodes] = useState({ sku: "", barcode: "" });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -94,12 +84,11 @@ export default function ProductFormPage() {
       if (isEdit && id) {
         const res = await api.product.fetchById(id);
         const p = res.data;
+        setCodes({ sku: p.sku ?? "", barcode: p.barcode ?? "" });
         setInitial({
           name: p.name ?? "",
           productTypeId: p.product_type_id ?? "",
           description: p.description ?? "",
-          sku: p.sku ?? "",
-          barcode: p.barcode ?? "",
           unit: p.unit ?? "pcs",
           costPrice: p.cost_price ?? "",
           sellingPrice: p.selling_price ?? "",
@@ -116,8 +105,7 @@ export default function ProductFormPage() {
     const payload: Record<string, unknown> = {
       name: values.name,
       description: values.description || "",
-      sku: values.sku || "",
-      barcode: values.barcode || "",
+      ...codes,
       unit,
       // A service has nothing to count, so it is billed without touching stock.
       trackStock: unit !== "service",

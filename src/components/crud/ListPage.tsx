@@ -132,7 +132,7 @@ export default function ListPage<Row extends { id: number | string }>({
 
   const primaryCol = columns.find((c) => c.primary) ?? columns[0];
   const secondaryCol = columns.find((c) => c.secondary);
-  const restCols = columns.filter((c) => c !== primaryCol && c !== secondaryCol);
+  const cardCols = columns.filter((c) => c !== primaryCol && c !== secondaryCol && !c.tableOnly);
   const avatarText = (row: Row) => (avatarKey ? String((row as Record<string, unknown>)[avatarKey] ?? "") : "");
 
   const actions = (row: Row) => (
@@ -232,34 +232,51 @@ export default function ListPage<Row extends { id: number | string }>({
           ))
         : rows.map((row, index) => (
             <Card key={row.id} className="pos-enter" sx={{ animationDelay: stagger(index, 25, 12) }}>
-              <CardActionArea onClick={() => onEdit(row)} component="div" sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5 }}>
-                {avatarKey && <Avatar text={avatarText(row)} />}
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="subtitle1" noWrap>
-                    {cellValue(row, primaryCol)}
-                  </Typography>
-                  {secondaryCol && (
-                    <Typography variant="body2" color="text.secondary" noWrap>
-                      {cellValue(row, secondaryCol)}
+              <CardActionArea onClick={() => onEdit(row)} component="div" sx={{ p: 1.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  {avatarKey && <Avatar text={avatarText(row)} />}
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="subtitle1" sx={{ lineHeight: 1.25, overflowWrap: "anywhere" }}>
+                      {cellValue(row, primaryCol)}
                     </Typography>
-                  )}
-                  {restCols.length > 0 && (
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: 0.75 }}>
-                      {restCols.map((c) => {
-                        const value = cellValue(row, c);
-                        if (value === "" || value === null) return null;
-                        return typeof value === "string" ? (
-                          <Chip key={c.key} size="small" variant="outlined" label={`${c.label}: ${value}`} />
-                        ) : (
-                          <Box key={c.key} sx={{ fontSize: 13 }}>
-                            {value}
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                  )}
+                    {secondaryCol && (
+                      <Typography variant="body2" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
+                        {cellValue(row, secondaryCol)}
+                      </Typography>
+                    )}
+                  </Box>
+                  {actions(row)}
                 </Box>
-                {actions(row)}
+                {/* Label over value, side by side, so a long price or name is never cut short. */}
+                {cardCols.length > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "flex-end",
+                      columnGap: 3,
+                      rowGap: 1,
+                      mt: 1.25,
+                      pt: 1.25,
+                      borderTop: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    {cardCols.map((c) => {
+                      const value = cellValue(row, c);
+                      if (value === "" || value === null) return null;
+                      return (
+                        <Box key={c.key} sx={{ minWidth: 0, flexBasis: typeof value === "string" ? "auto" : "100%" }}>
+                          <Typography variant="caption" color="text.secondary" component="div">
+                            {c.label}
+                          </Typography>
+                          <Typography variant="body2" component="div" sx={{ fontWeight: 700, overflowWrap: "anywhere" }}>
+                            {value}
+                          </Typography>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                )}
               </CardActionArea>
             </Card>
           ))}

@@ -6,14 +6,13 @@ A fully offline point of sale for an Android phone or tablet, built with React a
 
 - **Fully offline**: all data lives in a SQLite database on the device; the
   app never contacts a server
-- **Register**: product grid, search, barcode/SKU scanning straight into the
-  cart, per-item and whole-basket discounts, tax, and quantities typed in for
+- **Register**: product grid, search, per-item and whole-basket discounts, tax, and quantities typed in for
   goods sold by weight or length (1.5 kg)
 - **Sales history**: every sale by day, with its lines, customer and who
   rang it up; the owner can reverse a sale (a return or a mistake), which puts the
   goods back and takes any debt off the customer's account
-- **Stock for any kind of shop**: SKU and barcode per product, units (pieces,
-  kilograms, litres, ...), a reorder level per product, and items that are
+- **Stock for any kind of shop**: units (pieces, kilograms, litres, ...), a
+  low-stock warning level per product (prefilled at 5), and items that are
   billed but not stocked, such as alterations or a delivery fee
 - **Stock movements are accounted for**: damage, spoilage, theft, shop use and
   physical stock takes are recorded with a reason, not edited away
@@ -219,8 +218,8 @@ Before building, update the `appId` in `capacitor.config.json` to your own packa
 
 - Cloud sync between devices
 - Receipt printing over Bluetooth
-- Camera-based barcode scanning (a USB or Bluetooth scanner works today, as
-  it types the code into the search box)
+- Barcodes and shelf codes (the product form no longer asks for them; the
+  database still has the columns)
 - PIN login for shopkeepers
 
 ## License

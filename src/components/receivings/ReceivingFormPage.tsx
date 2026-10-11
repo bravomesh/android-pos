@@ -6,16 +6,16 @@ import api from "../../api";
 
 const BASE_FIELDS: FieldDef[] = [
   { name: "productId", label: "Product", type: "select", options: [], required: true },
-  { name: "vendorId", label: "Vendor", type: "select", options: [] },
-  { name: "qty", label: "Qty", type: "number", required: true },
-  { name: "price", label: "Price", type: "money" },
+  { name: "vendorId", label: "Vendor (optional)", type: "select", options: [] },
+  { name: "qty", label: "Quantity", type: "number", required: true },
+  { name: "price", label: "Cost of each", type: "money" },
   {
     name: "amountPaid",
-    label: "Amount paid to supplier",
+    label: "Amount paid to vendor",
     type: "money",
     helperText: "Leave blank if paid in full. Enter less, or 0, for stock taken on credit.",
   },
-  { name: "date", label: "Received At", type: "date" },
+  { name: "date", label: "Received on", type: "date" },
 ];
 
 const EMPTY = { productId: "", vendorId: "", qty: "", price: "", amountPaid: "", date: "" };
@@ -87,7 +87,8 @@ export default function ReceivingFormPage() {
 
   return (
     <FormPage
-      title={isEdit ? "Edit receiving" : "Add new receiving"}
+      title={isEdit ? "Edit delivery" : "Receive stock"}
+      subtitle="Adds to the stock of a product you have already created."
       fields={fields}
       initial={initial}
       onSubmit={handleSubmit}

@@ -10,7 +10,7 @@ interface ProductTypeRow {
 }
 
 const columns: ColumnDef<ProductTypeRow>[] = [
-  { key: "id", label: "ID" },
+  { key: "id", label: "ID", tableOnly: true },
   { key: "description", label: "Description", primary: true },
 ];
 
