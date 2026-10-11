@@ -74,7 +74,8 @@ export default function Shell({ children }: ShellProps) {
   const dispatch = useDispatch();
   const { mode, toggle } = useThemeMode();
   const user = useSelector(selectUser);
-  const items = navItemsFor(useSelector(selectIsAdmin));
+  const isAdmin = useSelector(selectIsAdmin);
+  const items = navItemsFor(isAdmin);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
@@ -192,12 +193,14 @@ export default function Shell({ children }: ShellProps) {
             {roleLabel(user?.role)}
           </Typography>
         </Box>
-        {/* Everyone changes their own password here; the Users screen is the owner's. */}
-        <Tooltip title="Change my password">
-          <IconButton aria-label="Change my password" onClick={() => setChangingPassword(true)} sx={{ width: 44, height: 44 }}>
-            <KeyIcon />
-          </IconButton>
-        </Tooltip>
+        {/* Only the owner sets passwords: their own here, a shopkeeper's on the Users screen. */}
+        {isAdmin && (
+          <Tooltip title="Change my password">
+            <IconButton aria-label="Change my password" onClick={() => setChangingPassword(true)} sx={{ width: 44, height: 44 }}>
+              <KeyIcon />
+            </IconButton>
+          </Tooltip>
+        )}
         <Tooltip title="Log out">
           <IconButton aria-label="Log out" onClick={() => dispatch(logout())} sx={{ width: 44, height: 44 }}>
             <LogoutIcon />

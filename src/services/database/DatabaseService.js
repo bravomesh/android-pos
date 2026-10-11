@@ -19,6 +19,8 @@ class DatabaseService {
     this.platform = Capacitor.getPlatform();
     // True only on the very first launch, when the database was just made.
     this.createdFresh = false;
+    // Called after every committed write; cloud sync listens here.
+    this.onWrite = null;
   }
 
   /**
@@ -284,6 +286,16 @@ class DatabaseService {
         error_message TEXT
       );
 
+      -- A photo per product, kept apart from products so that listing
+      -- products never drags the images along. No foreign key: a phone that
+      -- mirrors the shop replaces its products on every update and must
+      -- keep the photos it already downloaded.
+      CREATE TABLE IF NOT EXISTS product_photos (
+        product_id INTEGER PRIMARY KEY,
+        photo TEXT,
+        updated_at TEXT NOT NULL
+      );
+
       -- Create indexes for better performance
       CREATE INDEX IF NOT EXISTS idx_products_type ON products(product_type_id);
       CREATE INDEX IF NOT EXISTS idx_stock_qty ON stock(qty);
@@ -398,6 +410,7 @@ class DatabaseService {
       // rolled-back write is never snapshotted to IndexedDB.
       if (!inTransaction) {
         await this.persistWebStore();
+        this.onWrite?.();
       }
       return result;
     } catch (error) {
@@ -456,6 +469,7 @@ class DatabaseService {
       await this.db.commitTransaction();
       this.transactionDepth = 0;
       await this.persistWebStore();
+      this.onWrite?.();
       return result;
     } catch (error) {
       this.transactionDepth = 0;
@@ -523,10 +537,12 @@ class DatabaseService {
    * connection works on every platform the app runs on, including the web
    * build, and is a format that can be inspected without SQLite to hand.
    */
-  async exportAllTables() {
+  async exportAllTables({ photos = true } = {}) {
     const tables = {};
 
-    for (const table of DatabaseService.TABLES) {
+    // Photos are bulky, so the cloud copy leaves them out and sends each
+    // one separately, once.
+    for (const table of photos ? [...DatabaseService.TABLES, 'product_photos'] : DatabaseService.TABLES) {
       try {
         tables[table] = await this.query(`SELECT * FROM ${table}`);
       } catch (error) {
@@ -555,7 +571,7 @@ class DatabaseService {
   async clearShopData() {
     const keep = new Set(['users', 'transaction_id', 'daily_exports']);
     await this.withTransaction(async () => {
-      for (const table of [...DatabaseService.TABLES].reverse()) {
+      for (const table of ['product_photos', ...[...DatabaseService.TABLES].reverse()]) {
         if (!keep.has(table)) await this.run(`DELETE FROM ${table}`);
       }
     });
@@ -581,12 +597,17 @@ class DatabaseService {
       throw new Error(`This backup was made by a newer version of the app (format ${dump.version})`);
     }
 
+    // A copy without photos (the cloud one) leaves the photos here alone.
+    const tables = Array.isArray(dump.tables.product_photos)
+      ? [...DatabaseService.TABLES, 'product_photos']
+      : DatabaseService.TABLES;
+
     await this.withTransaction(async () => {
-      for (const table of [...DatabaseService.TABLES].reverse()) {
+      for (const table of [...tables].reverse()) {
         await this.run(`DELETE FROM ${table}`);
       }
 
-      for (const table of DatabaseService.TABLES) {
+      for (const table of tables) {
         const rows = Array.isArray(dump.tables[table]) ? dump.tables[table] : [];
         if (rows.length === 0) continue;
 

@@ -30,7 +30,7 @@ export interface ListPageProps<Row extends { id: number | string }> {
 export interface FieldDef {
   name: string;
   label: string;
-  type?: "text" | "number" | "money" | "select" | "date";
+  type?: "text" | "number" | "money" | "select" | "date" | "photo";
   required?: boolean;
   options?: { value: string | number; label: string }[]; // for select
   helperText?: string;

@@ -103,6 +103,8 @@ const productsApiBase = {
     return wrapResponse(result);
   },
 
+  getPhotos: async () => wrapResponse(await ProductsService.getPhotos()),
+
   /** Exact match on a scanned barcode or a typed shelf code. */
   findByCode: async (code) => {
     const product = await ProductsService.findByCode(code);

@@ -56,4 +56,10 @@
     <!-- The register runs on tablets and phones alike; no hardware is required. -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- Lets the product form open the camera app for a photo (Android 11+ hides other apps otherwise). -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+    </queries>
 </manifest>

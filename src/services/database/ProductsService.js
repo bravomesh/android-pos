@@ -134,14 +134,33 @@ class ProductsService {
       `SELECT
         p.*,
         pt.description as product_type_name,
-        COALESCE(s.qty, 0) as stock_qty
+        COALESCE(s.qty, 0) as stock_qty,
+        ph.photo
       FROM products p
       LEFT JOIN product_types pt ON p.product_type_id = pt.id
       LEFT JOIN stock s ON p.id = s.product_id
+      LEFT JOIN product_photos ph ON p.id = ph.product_id
       WHERE p.id = ?`,
       [id]
     );
     return products[0] || null;
+  }
+
+  /** Every product photo, for the sale screen to load once. */
+  async getPhotos() {
+    return db.query('SELECT product_id, photo FROM product_photos WHERE photo IS NOT NULL');
+  }
+
+  /**
+   * undefined leaves the photo as it is, a blank removes it. A removed photo
+   * stays as an empty row so that the removal reaches the owner's phone too.
+   */
+  async setPhoto(productId, photo) {
+    if (photo === undefined) return;
+    await db.run(
+      'INSERT OR REPLACE INTO product_photos (product_id, photo, updated_at) VALUES (?, ?, ?)',
+      [productId, photo || null, new Date().toISOString()]
+    );
   }
 
   /**
@@ -204,6 +223,8 @@ class ProductsService {
         );
       }
 
+      await this.setPhoto(productId, data.photo || undefined);
+
       return this.getProductById(productId);
     });
   }
@@ -249,6 +270,7 @@ class ProductsService {
         id
       ]
     );
+    await this.setPhoto(id, data.photo);
 
     return this.getProductById(id);
   }
@@ -272,6 +294,7 @@ class ProductsService {
 
     // Stock will be deleted via CASCADE
     await db.run('DELETE FROM products WHERE id = ?', [id]);
+    await this.setPhoto(id, null);
     return { success: true };
   }
 

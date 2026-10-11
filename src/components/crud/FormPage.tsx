@@ -13,6 +13,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBackRounded";
 
 import { FieldDef, FormPageProps } from "./types";
 import EntitySelect from "./EntitySelect";
+import PhotoField from "./PhotoField";
 import { toast } from "../../toast/useToast";
 import { CURRENCY } from "../../money";
 import { stagger } from "../../theme/motion";
@@ -95,6 +96,17 @@ export default function FormPage({ title, subtitle, fields, initial, onSubmit, s
       helperText: errorText ?? field.helperText,
       fullWidth: true,
     };
+
+    if (field.type === "photo") {
+      return (
+        <PhotoField
+          label={field.label}
+          value={String(value)}
+          onChange={(photo) => setField(field.name, photo)}
+          helperText={field.helperText}
+        />
+      );
+    }
 
     if (field.type === "select") {
       return (

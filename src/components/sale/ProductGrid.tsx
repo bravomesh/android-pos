@@ -78,7 +78,8 @@ export default function ProductGrid({ products, onAdd, inCart = {}, loading }: P
     }
     if (onAdd(product)) {
       const tile = card.querySelector<HTMLElement>("[data-tile]") ?? card;
-      flyToCart(tile, initials(product.name), tileGradient(product.name));
+      if (product.photo) flyToCart(tile, "", `center / cover url("${product.photo}")`);
+      else flyToCart(tile, initials(product.name), tileGradient(product.name));
     }
   };
 
@@ -87,7 +88,7 @@ export default function ProductGrid({ products, onAdd, inCart = {}, loading }: P
       <Box sx={GRID} aria-busy="true" aria-label="Loading products">
         {Array.from({ length: 8 }).map((_, i) => (
           <Card key={i} sx={{ p: 1.25 }}>
-            <Skeleton variant="rounded" height={76} />
+            <Skeleton variant="rounded" height={92} />
             <Skeleton width="80%" sx={{ mt: 1 }} />
             <Skeleton width="45%" />
           </Card>
@@ -164,7 +165,7 @@ export default function ProductGrid({ products, onAdd, inCart = {}, loading }: P
                 data-tile
                 aria-hidden
                 sx={{
-                  height: 76,
+                  height: 92,
                   borderRadius: "12px",
                   display: "grid",
                   placeItems: "center",
@@ -181,9 +182,13 @@ export default function ProductGrid({ products, onAdd, inCart = {}, loading }: P
                   },
                 }}
               >
-                <Typography sx={{ fontFamily: "Rubik Variable, Rubik, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: "0.02em" }}>
-                  {initials(product.name)}
-                </Typography>
+                {product.photo ? (
+                  <Box component="img" src={product.photo} alt="" loading="lazy" sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <Typography sx={{ fontFamily: "Rubik Variable, Rubik, sans-serif", fontWeight: 700, fontSize: 26, letterSpacing: "0.02em" }}>
+                    {initials(product.name)}
+                  </Typography>
+                )}
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Typography

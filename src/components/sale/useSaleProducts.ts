@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "../../api";
 import { toast } from "../../toast/useToast";
 
@@ -16,6 +16,8 @@ export interface SaleProduct {
   unit?: string | null;
   track_stock?: number;
   reorder_level?: number | null;
+  /** A small JPEG as a data URL, when the shop has taken one. */
+  photo?: string | null;
 }
 
 export interface SaleProductType {
@@ -43,6 +45,7 @@ export function useSaleProducts(): UseSaleProductsResult {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [typeId, setTypeId] = useState<number | string | null>(null);
+  const photos = useRef<Record<string, string>>({});
 
   const load = useCallback(async (showSpinner: boolean) => {
     if (showSpinner) setLoading(true);
@@ -51,7 +54,15 @@ export function useSaleProducts(): UseSaleProductsResult {
         api.product.fetchAll(),
         api.productType.fetchAll(),
       ]);
-      setAllProducts(productsRes.data || []);
+      // Photos are bulky and do not change with a sale, so they are read
+      // when the screen opens and not again on every refresh.
+      if (showSpinner) {
+        const rows: { product_id: number; photo: string }[] = (await api.product.getPhotos()).data || [];
+        photos.current = Object.fromEntries(rows.map((row) => [String(row.product_id), row.photo]));
+      }
+      setAllProducts(
+        (productsRes.data || []).map((p: SaleProduct) => ({ ...p, photo: photos.current[String(p.id)] ?? null }))
+      );
       setTypes(typesRes.data || []);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : FALLBACK_ERROR);

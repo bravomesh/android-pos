@@ -18,6 +18,13 @@ const UNIT_OPTIONS = [
 
 const FIELDS: FieldDef[] = [
   { name: "name", label: "Name", wide: true, required: true },
+  {
+    name: "photo",
+    label: "Photo",
+    type: "photo",
+    wide: true,
+    helperText: "Shown on the sale screen. Without one the product gets a coloured tile.",
+  },
   { name: "productTypeId", label: "Category", type: "select", options: [] },
   {
     name: "unit",
@@ -58,6 +65,7 @@ export default function ProductFormPage() {
   );
   const [initial, setInitial] = useState<Record<string, unknown>>({
     name: "",
+    photo: "",
     productTypeId: "",
     description: "",
     unit: "pcs",
@@ -87,6 +95,7 @@ export default function ProductFormPage() {
         setCodes({ sku: p.sku ?? "", barcode: p.barcode ?? "" });
         setInitial({
           name: p.name ?? "",
+          photo: p.photo ?? "",
           productTypeId: p.product_type_id ?? "",
           description: p.description ?? "",
           unit: p.unit ?? "pcs",
@@ -104,6 +113,7 @@ export default function ProductFormPage() {
 
     const payload: Record<string, unknown> = {
       name: values.name,
+      photo: values.photo || "",
       description: values.description || "",
       ...codes,
       unit,
